@@ -36,6 +36,18 @@
     <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5.5"/><path d="M12 16.4v.1"/></symbol>
     <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><path d="M12 7.6v.1"/></symbol>
     <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
+    <symbol id="i-group" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3"/><path d="M3.5 19c.4-3 2.6-5 5.5-5s5.1 2 5.5 5"/><circle cx="16.6" cy="9.4" r="2.4"/><path d="M15.8 14.1c2.5.2 4.3 2 4.7 4.9"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M20.5 11.5c0 3.9-3.8 7-8.5 7-1.1 0-2.2-.2-3.1-.5l-4.4 1.5 1.3-3.5c-1.2-1.3-1.8-2.8-1.8-4.5 0-3.9 3.8-7 8.5-7s8 3.1 8 7Z"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="m6.5 6.5 11 11M17.5 6.5l-11 11"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="m6.5 14.5 5.5-5.5 5.5 5.5"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="m6.5 9.5 5.5 5.5 5.5-5.5"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="M14.5 6.5 9 12l5.5 5.5"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="m9.5 6.5 5.5 5.5-5.5 5.5"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4h-4"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="m14.5 5.5 4 4L9 19H5v-4Z"/><path d="m12.5 7.5 4 4"/></symbol>
+    <symbol id="i-report" viewBox="0 0 24 24"><path d="M7 3.5h7l4.5 4.5v11a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5Z"/><path d="M13.5 3.5V8h5"/><path d="M8.5 12.5h7M8.5 16h5"/></symbol>
     <symbol id="i-brush" viewBox="0 0 24 24"><path d="m14 4.5 5.5 5.5-7.8 7.8-5.5-5.5Z"/><path d="M6.2 12.3 4 14.5c-1 1-1 2.6 0 3.6l1.9 1.9c1 1 2.6 1 3.6 0l2.2-2.2"/></symbol>
   </defs>
 </svg>
@@ -57,6 +69,7 @@
       <a href="/cutout" data-link data-route="cutout"><svg class="icon" aria-hidden="true"><use href="#i-cutout"/></svg><span data-i18n="nav.cutout">智能抠图</span></a>
       <a href="/erase" data-link data-route="erase"><svg class="icon" aria-hidden="true"><use href="#i-erase"/></svg><span data-i18n="nav.erase">涂抹消除</span></a>
       <a href="/heatmap" data-link data-route="heatmap"><svg class="icon" aria-hidden="true"><use href="#i-focus"/></svg><span data-i18n="nav.heatmap">注意力热力图</span></a>
+      <a href="/focus-group" data-link data-route="focus"><svg class="icon" aria-hidden="true"><use href="#i-group"/></svg><span class="nav-full" data-i18n="nav.focus">AI 焦点小组</span><span class="nav-short" data-i18n="nav.focus_short">焦点小组</span></a>
     </nav>
     <button type="button" class="lang-toggle" id="lang-toggle" lang="en" aria-label="Switch to English" data-i18n-attr="aria-label:lang.toggle_label">
       <svg class="icon" aria-hidden="true"><use href="#i-globe"/></svg><span data-i18n="lang.toggle">EN</span>
@@ -93,6 +106,7 @@
             <button type="button" class="btn" data-tool="cutout"><svg class="icon" aria-hidden="true"><use href="#i-cutout"/></svg><span data-i18n="home.choose_cutout">抠图去背景</span></button>
             <button type="button" class="btn" data-tool="erase"><svg class="icon" aria-hidden="true"><use href="#i-erase"/></svg><span data-i18n="home.choose_erase">涂抹消除</span></button>
             <button type="button" class="btn" data-tool="heatmap"><svg class="icon" aria-hidden="true"><use href="#i-focus"/></svg><span data-i18n="home.choose_heatmap">注意力热力图</span></button>
+            <button type="button" class="btn" data-tool="focus"><svg class="icon" aria-hidden="true"><use href="#i-group"/></svg><span data-i18n="home.choose_focus">焦点小组讨论</span></button>
           </div>
           <div><button type="button" class="btn btn-quiet btn-sm" data-reset><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg><span data-i18n="home.choose_other">换一张图</span></button></div>
         </div>
@@ -178,6 +192,22 @@
             <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span data-i18n="feature.heatmap.point2">支持两个版本 A/B 对比</span></li>
           </ul>
           <a class="btn btn-primary" href="/heatmap" data-link><span data-i18n="feature.heatmap.cta">分析截图</span><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+        </div>
+      </article>
+
+      <article class="feature">
+        <div class="feature-media feature-excerpt" data-focus-excerpt aria-busy="true">
+          <p class="excerpt-label" data-excerpt-label data-i18n="feature.focus.media_label">示例讨论节选：投资理财用户的痛点</p>
+          <ol class="transcript excerpt-turns" data-excerpt-turns></ol>
+        </div>
+        <div class="feature-copy">
+          <h2 data-i18n="feature.focus.title">约用户之前，先开一场 AI 焦点小组</h2>
+          <p data-i18n="feature.focus.body">写下研究问题，AI 招募几位背景不同的参与者，主持人带着他们讨论，最后整理成带原话引用的研究报告。还能让他们看一组流程截图、比较 A/B 两版，或者结合注意力热力图追问。</p>
+          <ul>
+            <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span data-i18n="feature.focus.point1">先确认参与者和提纲，再开始讨论</span></li>
+            <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span data-i18n="feature.focus.point2">报告含核心发现、原话引用和改进建议</span></li>
+          </ul>
+          <a class="btn btn-primary" href="/focus-group" data-link><span data-i18n="feature.focus.cta">开始讨论</span><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
         </div>
       </article>
     </div>
@@ -347,6 +377,7 @@
             <button type="button" class="btn" data-browse="a"><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg><span data-i18n="tool.new">换一张图片</span></button>
             <button type="button" class="btn" data-sample><svg class="icon" aria-hidden="true"><use href="#i-image"/></svg><span data-i18n="heatmap.sample_short">示例</span></button>
           </div>
+          <button type="button" class="btn btn-quiet btn-block" data-to-focus disabled><svg class="icon" aria-hidden="true"><use href="#i-group"/></svg><span data-i18n="heatmap.to_focus">交给 AI 焦点小组讨论</span></button>
         </div>
         <div class="panel-section">
           <span class="field-label" id="heatmap-mode-label" data-i18n="heatmap.mode_label">模式</span>
@@ -415,6 +446,94 @@
     <input type="file" accept="image/png,image/jpeg,image/webp" hidden data-file>
   </section>
 
+  <!-- ── AI focus group ───────────────────────────────────────────────────── -->
+  <section class="view tool" data-view="focus" hidden>
+    <header class="tool-head">
+      <h1 tabindex="-1" data-i18n="focus.h1">AI 焦点小组</h1>
+      <p data-i18n="focus.lead">写下一个研究问题，AI 招募几位背景不同的参与者，由主持人带着讨论，最后整理成研究报告。适合在约真实用户之前梳理假设、打磨提纲。</p>
+    </header>
+    <div class="workspace">
+      <div class="tool-main">
+        <div class="notice-slot"></div>
+        <div class="sheet" data-sheet>
+          <div class="brief" data-brief>
+            <label class="field">
+              <span data-i18n="focus.topic">研究问题</span>
+              <textarea class="prose prose-lg" name="topic" rows="2" maxlength="300" data-i18n-attr="placeholder:focus.topic_placeholder" placeholder="例如：投资理财用户最头疼的是什么？他们需要什么样的帮助？"></textarea>
+            </label>
+            <label class="field">
+              <span data-i18n="focus.audience">目标用户（可选）</span>
+              <input class="input" type="text" name="audience" maxlength="300" autocomplete="off" data-i18n-attr="placeholder:focus.audience_placeholder" placeholder="例如：25–45 岁、有闲钱但不太懂理财的上班族">
+            </label>
+            <label class="field">
+              <span data-i18n="focus.context">补充背景（可选）</span>
+              <textarea class="prose" name="context" rows="3" maxlength="3000" data-i18n-attr="placeholder:focus.context_placeholder" placeholder="产品或概念是什么、你已经知道什么、最想弄清楚什么……"></textarea>
+            </label>
+            <div class="field">
+              <span class="field-label" id="focus-mode-label" data-i18n="focus.material">讨论素材</span>
+              <div class="segmented segmented-modes" role="tablist" aria-labelledby="focus-mode-label">
+                <button type="button" role="tab" aria-selected="true" data-mode="text" data-i18n="focus.mode_text">不用素材</button>
+                <button type="button" role="tab" aria-selected="false" tabindex="-1" data-mode="flow" data-i18n="focus.mode_flow">流程截图</button>
+                <button type="button" role="tab" aria-selected="false" tabindex="-1" data-mode="ab" data-i18n="focus.mode_ab">A/B 对比</button>
+                <button type="button" role="tab" aria-selected="false" tabindex="-1" data-mode="heatmap" data-i18n="focus.mode_heatmap">热力图</button>
+              </div>
+              <p class="help" data-mode-help data-i18n="focus.mode_text_help">只围绕研究问题讨论。</p>
+            </div>
+            <div class="trays" data-trays hidden></div>
+            <div class="samples brief-samples">
+              <button type="button" class="sample-chip sample-chip-icon" data-sample><span class="chip-mark" aria-hidden="true"><svg class="icon"><use href="#i-chat"/></svg></span><span data-i18n="focus.sample">看一场示例讨论：投资理财用户的痛点</span></button>
+            </div>
+          </div>
+          <div class="plan" data-plan hidden></div>
+          <div class="session" data-session hidden>
+            <div class="session-head">
+              <h2 data-i18n="focus.transcript">座谈记录</h2>
+              <ul class="roster-strip" data-roster></ul>
+            </div>
+            <ol class="transcript" data-transcript></ol>
+          </div>
+          <div class="sheet-dock">
+            <div class="stage-status sheet-pill" data-pill hidden></div>
+            <button type="button" class="dock-stop" data-dock-stop hidden><svg class="icon" aria-hidden="true"><use href="#i-stop"/></svg><span data-i18n="focus.stop">停止讨论</span></button>
+          </div>
+        </div>
+      </div>
+      <aside class="panel" aria-labelledby="focus-panel-title">
+        <h2 class="visually-hidden" id="focus-panel-title" data-i18n="tool.panel">设置与导出</h2>
+        <div class="panel-section">
+          <ol class="steps" aria-label="进度" data-i18n-attr="aria-label:focus.steps_label">
+            <li data-step="recruit"><span class="step-dot num" aria-hidden="true">1</span><span data-i18n="focus.step_recruit">招募</span></li>
+            <li data-step="discuss"><span class="step-dot num" aria-hidden="true">2</span><span data-i18n="focus.step_discuss">讨论</span></li>
+            <li data-step="report"><span class="step-dot num" aria-hidden="true">3</span><span data-i18n="focus.step_report">报告</span></li>
+          </ol>
+          <div class="status" data-status aria-live="polite"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg><span data-i18n="focus.idle">写下研究问题，选好素材，然后招募参与者。</span></div>
+          <p class="meta num" data-meta hidden></p>
+        </div>
+        <div class="panel-section" data-count-section>
+          <span class="field-label" id="focus-count-label" data-i18n="focus.count">参与人数</span>
+          <div class="segmented segmented-block" role="group" aria-labelledby="focus-count-label">
+            <button type="button" class="num" aria-pressed="false" data-count="4">4</button>
+            <button type="button" class="num" aria-pressed="true" data-count="5">5</button>
+            <button type="button" class="num" aria-pressed="false" data-count="6">6</button>
+          </div>
+        </div>
+        <div class="panel-section panel-actions" data-actions></div>
+        <div class="panel-notes">
+          <p class="fineprint" data-i18n="focus.note_ai">参与者由 AI 扮演，不是真实用户。结果适合用来梳理假设、准备访谈，重要决定请找真实用户验证。</p>
+          <p class="fineprint" data-i18n="focus.note_data">讨论由 DeepSeek 生成：你填写的内容和上传的截图会发送到 DeepSeek 的服务器处理，本站不保存。请不要填写敏感信息。</p>
+        </div>
+      </aside>
+    </div>
+    <section class="results" data-results hidden aria-labelledby="focus-report-title">
+      <div class="results-head">
+        <h2 id="focus-report-title" data-i18n="focus.report">研究报告</h2>
+        <p class="meta num" data-report-meta></p>
+      </div>
+      <div class="report" data-report></div>
+    </section>
+    <input type="file" accept="image/png,image/jpeg,image/webp" multiple hidden data-file>
+  </section>
+
 </main>
 
 <footer class="site-footer">
@@ -430,6 +549,7 @@
         <span class="brand-latin">Focal</span>
       </a>
       <p class="footer-note" data-i18n="footer.about">免费的在线图片工具。图片只在处理时停留在服务器内存里，处理完立即删除。</p>
+      <p class="footer-note" data-i18n="footer.focus">AI 焦点小组由 DeepSeek 生成，填写的内容和截图会发送给 DeepSeek 处理，本站不保存。</p>
       <p class="footer-note" data-i18n="footer.noncommercial">本站为非商业用途。</p>
     </div>
     <div>
@@ -439,6 +559,7 @@
         <li><a href="https://github.com/Sanster/IOPaint" data-i18n="footer.iopaint">IOPaint：消除与抠图服务（Apache-2.0）</a></li>
         <li><a href="https://github.com/advimman/lama" data-i18n="footer.lama">LaMa：涂抹消除模型（Apache-2.0）</a></li>
         <li><a href="https://huggingface.co/briaai/RMBG-1.4" data-i18n="footer.rmbg">BRIA RMBG-1.4：抠图模型，仅限非商业使用</a></li>
+        <li><a href="https://www.deepseek.com/" data-i18n="footer.deepseek">DeepSeek：AI 焦点小组的语言模型（API）</a></li>
         <li data-i18n="footer.samples">示例图片：NASA（公有领域）、克利夫兰艺术博物馆开放资源（CC0）、Rachel Michetti（CC0）</li>
         <li><a href="https://github.com/DietCokewithSugar/hotgaze" data-i18n="footer.source">源代码</a></li>
       </ul>

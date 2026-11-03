@@ -3,3 +3,5 @@
 fastapi>=0.115,<1
 uvicorn>=0.30,<1
 python-multipart>=0.0.18
+# Streams the AI focus group from the DeepSeek API (web/focus_group.py).
+httpx>=0.27,<1

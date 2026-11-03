@@ -83,21 +83,80 @@ export async function post(path, body, { signal } = {}) {
     if (type.startsWith("image/")) return { blob: await response.blob(), headers: response.headers };
     return response.json();
   }
+  throw await responseError(response);
+}
+
+/** The ApiError for a failed response: the server's code when it sent one. */
+async function responseError(response) {
+  const type = response.headers.get("content-type") || "";
   const payload = type.includes("json") ? await response.json().catch(() => null) : null;
   const detail = payload?.detail;
   if (detail && typeof detail === "object" && !Array.isArray(detail) && detail.code) {
-    throw new ApiError(detail.code, detail.params || {}, detail.message);
+    return new ApiError(detail.code, detail.params || {}, detail.message);
   }
   if (Array.isArray(detail)) {
     const message = detail
       .map((item) => `${(item.loc || []).slice(1).join(".") || "request"}: ${item.msg}`)
       .join("; ");
-    throw new ApiError("validation", { message }, message);
+    return new ApiError("validation", { message }, message);
   }
-  if (typeof detail === "string") throw new ApiError("generic", { message: detail }, detail);
+  if (typeof detail === "string") return new ApiError("generic", { message: detail }, detail);
   // A platform proxy answers 502/503/504 with an HTML page while the app is asleep or restarting.
-  if ([502, 503, 504].includes(response.status)) throw new ApiError("network", {}, response.statusText);
-  throw new ApiError("server", { status: response.status }, response.statusText);
+  if ([502, 503, 504].includes(response.status)) return new ApiError("network", {}, response.statusText);
+  return new ApiError("server", { status: response.status }, response.statusText);
+}
+
+/**
+ * POST form data to an endpoint that answers with server-sent events. Calls
+ * onEvent(name, data) for each event and resolves on `done`. An `error` event, an
+ * HTTP error or a stream that ends early rejects with an ApiError; aborting the
+ * signal rejects with an AbortError and closes the connection.
+ */
+export async function postEvents(path, body, { signal, onEvent } = {}) {
+  let response;
+  try {
+    response = await fetch(path, { method: "POST", body, signal, headers: { Accept: "text/event-stream" } });
+  } catch (error) {
+    if (error.name === "AbortError") throw error;
+    throw new ApiError("network", {}, error.message);
+  }
+  if (!response.ok || !(response.headers.get("content-type") || "").includes("text/event-stream")) {
+    throw await responseError(response);
+  }
+  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+  let buffer = "";
+  try {
+    for (;;) {
+      let chunk;
+      try {
+        chunk = await reader.read();
+      } catch (error) {
+        if (error.name === "AbortError") throw error;
+        throw new ApiError("stream_cut", {}, error.message);
+      }
+      if (chunk.done) break;
+      buffer += chunk.value;
+      let end;
+      while ((end = buffer.indexOf("\n\n")) !== -1) {
+        const block = buffer.slice(0, end);
+        buffer = buffer.slice(end + 2);
+        let name = "message";
+        const data = [];
+        for (const line of block.split("\n")) {
+          if (line.startsWith("event:")) name = line.slice(6).trim();
+          else if (line.startsWith("data:")) data.push(line.slice(5).replace(/^ /, ""));
+        }
+        if (!data.length) continue; // keep-alive comments
+        const value = JSON.parse(data.join("\n"));
+        if (name === "error") throw new ApiError(value.code || "generic", value.params || {}, value.message);
+        if (name === "done") return;
+        onEvent?.(name, value);
+      }
+    }
+  } finally {
+    reader.cancel().catch(() => {});
+  }
+  throw new ApiError("stream_cut");
 }
 
 /** A localized sentence for any error thrown by post() or the file helpers. */
@@ -374,9 +433,13 @@ export function statusLine(node, pill = null) {
       node.className = "status";
       node.replaceChildren(
         h("span", { class: "spinner", "aria-hidden": "true" }),
-        h("span", { class: "status-text" }, h("span", { text: t(state.key) }), " ", parts.elapsed, parts.hint),
+        h("span", { class: "status-text" }, h("span", { text: t(state.key, state.params) }), " ", parts.elapsed, parts.hint),
       );
-      pill?.replaceChildren(h("span", { class: "spinner", "aria-hidden": "true" }), h("span", { text: t(state.key) }), parts.pillElapsed);
+      pill?.replaceChildren(
+        h("span", { class: "spinner", "aria-hidden": "true" }),
+        h("span", { text: t(state.key, state.params) }),
+        parts.pillElapsed,
+      );
       tick();
       timer = setInterval(tick, 1000);
       return;
@@ -386,8 +449,9 @@ export function statusLine(node, pill = null) {
   };
 
   return {
-    working(key, { hintKey = null, slowAfter = null, slowKey = "status.slow" } = {}) {
-      state = { kind: "working", key, hintKey, slowAfter, slowKey, started: performance.now() };
+    /** `since` keeps counting from an earlier start (a long job with several stages). */
+    working(key, { params = {}, since = null, hintKey = null, slowAfter = null, slowKey = "status.slow" } = {}) {
+      state = { kind: "working", key, params, hintKey, slowAfter, slowKey, started: since ?? performance.now() };
       render();
     },
     done(key, params = {}) {
