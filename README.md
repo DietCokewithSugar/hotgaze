@@ -129,8 +129,10 @@ weight download. See the complete consumer workflow in
 English built on this engine: an attention-heatmap page (upload a screenshot, draw
 the regions to measure, compare two versions), plus background removal and
 brush erase served by [IOPaint](https://github.com/Sanster/IOPaint) as a private
-service ([`services/iopaint/`](services/iopaint/)). The [`render.yaml`](render.yaml)
-Blueprint deploys both to Render — see [`web/README.md`](web/README.md).
+service ([`services/iopaint/`](services/iopaint/)), and an AI focus group on the
+DeepSeek API that can discuss a screenshot together with its HotGaze heatmap. The
+[`render.yaml`](render.yaml) Blueprint deploys both services to Render — see
+[`web/README.md`](web/README.md).
 
 ## What's in the box
 

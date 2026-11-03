@@ -68,6 +68,9 @@ def web() -> ModuleType:
     pytest.importorskip("python_multipart")
     if importlib.util.find_spec("httpx2") is None:  # older Starlette test clients use httpx
         pytest.importorskip("httpx")
+    # app.py imports its sibling focus_group.py, as `uvicorn --app-dir web` allows.
+    if str(_WEB_APP.parent) not in sys.path:
+        sys.path.insert(0, str(_WEB_APP.parent))
     spec = importlib.util.spec_from_file_location("hotgaze_web_app", _WEB_APP)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)

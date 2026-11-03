@@ -1,8 +1,9 @@
 # Render Blueprint for 焦点 Focal — https://render.com/docs/blueprint-spec
 #
 # Two services in one region:
-#   hotgaze  public web service (free): the site, the attention heatmap, and the
-#            cutout/erase API, which forwards to the private service below.
+#   hotgaze  public web service (free): the site, the attention heatmap, the AI
+#            focus group (DeepSeek API), and the cutout/erase API, which forwards
+#            to the private service below.
 #   iopaint  private service (paid, 1 CPU / 2 GB): IOPaint with LaMa (erase) and
 #            BRIA RMBG-1.4 (cutout), models baked into the Docker image. It has no
 #            public URL; only services in the same region and workspace reach it.
@@ -60,6 +61,14 @@ services:
       # Hides OpenCV 5 DNN notices that the faces layer logs on every request.
       - key: OPENCV_LOG_LEVEL
         value: ERROR
+      # DeepSeek API key for the AI focus group (/focus-group); without it the page
+      # says the tool is not configured. sync: false keeps the secret out of this
+      # file: Render asks for it when the Blueprint is first created. On a service
+      # that already exists, add it under Dashboard → hotgaze → Environment.
+      # Optional: DEEPSEEK_MODEL (default deepseek-flash, which can read screenshots)
+      # and DEEPSEEK_REPORT_MODEL (the report only, e.g. deepseek-v4-pro).
+      - key: DEEPSEEK_API_KEY
+        sync: false
 
   - type: pserv
     name: iopaint

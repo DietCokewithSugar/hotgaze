@@ -37,6 +37,7 @@ const SAMPLE = {
 const MIN_BOX_PX = 8;
 
 let root;
+let ctx;
 let els;
 let status;
 let info = null;
@@ -57,8 +58,9 @@ const state = {
   retry: null,
 };
 
-export function init(section) {
+export function init(section, context) {
   root = section;
+  ctx = context;
   els = {
     stage: $("[data-stage]", root),
     empty: $("[data-empty]", root),
@@ -78,6 +80,7 @@ export function init(section) {
     faces: $("input[name=faces]", root),
     run: $("[data-run]", root),
     runLabel: $("[data-run-label]", root),
+    toFocus: $("[data-to-focus]", root),
     results: $("[data-results]", root),
     resultsBody: $("[data-results-body]", root),
     resultsMeta: $("[data-results-meta]", root),
@@ -125,6 +128,7 @@ export function init(section) {
   }
   els.typed.addEventListener("input", renderStatus);
   els.run.addEventListener("click", run);
+  els.toFocus.addEventListener("click", toFocus);
   root.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && (event.ctrlKey || event.metaKey) && !els.run.disabled) run();
   });
@@ -343,7 +347,19 @@ function renderModeControls() {
   const ready = state.images.a && (state.mode === "score" || state.images.b);
   els.run.disabled = state.busy || !ready;
   els.run.setAttribute("aria-busy", String(state.busy));
+  els.toFocus.disabled = state.busy || !ready;
   for (const button of $$("[data-browse], [data-sample]", root)) button.disabled = state.busy;
+}
+
+/** Hand the screenshot (and its regions) to the AI focus group; compare mode becomes A/B. */
+function toFocus() {
+  if (!state.files.a) return;
+  if (state.mode === "compare") {
+    if (!state.files.b) return;
+    ctx.navigate("focus", { options: { mode: "ab", files: { a: [state.files.a], b: [state.files.b] } } });
+    return;
+  }
+  ctx.navigate("focus", { options: { mode: "heatmap", files: { a: [state.files.a] }, regions: regionStrings() } });
 }
 
 function paneTitle(slot) {

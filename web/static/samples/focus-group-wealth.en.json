@@ -1,0 +1,726 @@
+{
+  "format": "focal-focus-group",
+  "version": 1,
+  "generator": "claude-simulated",
+  "lang": "en",
+  "created": "2026-11-03",
+  "translated_from": "focus-group-wealth.zh.json",
+  "brief": {
+    "topic": "Pain points and needs of people who invest their savings",
+    "context": "Early research for an investing assistant for everyday people: what makes managing spare money hard.",
+    "audience": "Everyday people with spare money to invest, of varied ages, incomes and experience",
+    "mode": "text",
+    "participants": 5
+  },
+  "plan": {
+    "title": "Pain points of people who invest",
+    "objective": "Learn which parts of managing spare money frustrate people from different backgrounds most, where they get advice and whom they trust, and what they expect, and refuse, from an ideal investing service.",
+    "participants": [
+      {
+        "id": "p1",
+        "name": "Wang Li",
+        "summary": "34 · Hangzhou · internet operations",
+        "profile": "Married with a four-year-old; household income about ¥450k a year and some ¥300k in spare savings. In early 2021 she followed a colleague into baijiu and new-energy funds on Alipay at the peak, was down 35% at the worst, sold half at a loss and is still stuck with the rest. Since then she only keeps money in Yu'e Bao and bank deposits, and worries it won't beat inflation. Busy job; only gets time on her phone after the child is asleep.",
+        "voice": "Talks fast, vents, says \"bottom line\" and \"all I want to know\"; allergic to sales talk.",
+        "stance": "skeptical"
+      },
+      {
+        "id": "p2",
+        "name": "Chen Zihao",
+        "summary": "27 · Shenzhen · backend engineer",
+        "profile": "Single, earns a little over ¥30k a month, and puts ¥3,000 a month each into CSI 300 and S&P 500 ETFs; about ¥250k invested. Reads Xueqiu every day, tracks money in a spreadsheet, has studied fees and tracking error. Opened a Hong Kong brokerage account to buy US ETFs; opening it and converting currency took over a month. Keen on AI tools, hates in-app recommendations and pop-ups.",
+        "voice": "Direct, argues with numbers and fees, the odd tech joke.",
+        "stance": "supportive"
+      },
+      {
+        "id": "p3",
+        "name": "Liu Jianguo",
+        "summary": "53 · Jinan · state-owned enterprise manager",
+        "profile": "Retires next year. Mostly bank deposits and government bonds, plus a participating insurance policy. In 2022 a bank wealth manager sold him a product as \"steady\"; its value fell below par and he lost sleep for months, then learned it was a non-guaranteed, mark-to-market product. The banking app's text is too small; his daughter checks transfers for him. Prefers face-to-face, yet trusts wealth managers less and less.",
+        "voice": "Slow and deliberate, tells his own stories, says \"at our age\" and \"safe and steady comes first\".",
+        "stance": "skeptical"
+      },
+      {
+        "id": "p4",
+        "name": "Zhao Xiaowen",
+        "summary": "29 · Chengdu · freelance illustrator",
+        "profile": "Irregular income: ¥20–30k in a good month, a few thousand in a bad one. Keeps her money in Yu'e Bao and WeChat Change, about ¥60k saved. Last year a Xiaohongshu influencer led her into a gold savings plan and a healthcare fund; both fell right after she bought and she hardly dares look now. Wants to learn about investing, but jargon puts her off, and she can't tell which money should stay as an emergency fund.",
+        "voice": "Gentle, says \"I feel like\" and \"maybe\", self-deprecating, often asks what others do.",
+        "stance": "neutral"
+      },
+      {
+        "id": "p5",
+        "name": "Sun Hao",
+        "summary": "42 · Shanghai · sales director at a multinational",
+        "profile": "About ¥4 million in household financial assets; has a dedicated adviser at a private bank and holds equity funds, private fixed income and a Hong Kong insurance policy. His biggest frustration is not knowing how much of what his adviser recommends is driven by commission; his accounts sit at several banks and brokers and he has never seen his overall return. Would pay for truly independent advice if it could prove it has no conflict of interest.",
+        "voice": "Pragmatic and orderly; keeps asking \"what's the incentive behind this?\".",
+        "stance": "neutral"
+      }
+    ],
+    "guide": [
+      {
+        "id": "q1",
+        "question": "Let's start with now: how do you manage your spare money, and what was the last money decision you agonised over or regretted?",
+        "purpose": "Warm-up: current habits and real experiences"
+      },
+      {
+        "id": "q2",
+        "question": "When it comes to investing, which part gives you the biggest headache?",
+        "purpose": "Find the main pain points and why they hurt"
+      },
+      {
+        "id": "q3",
+        "question": "For money information and advice, who do you trust most, who do you trust least, and why?",
+        "purpose": "Understand where information comes from and where trust comes from"
+      },
+      {
+        "id": "q4",
+        "question": "If there were an ideal investing assistant, what would it have to do for you to use it, or even pay for it? Is there a line it must never cross?",
+        "purpose": "Needs, willingness to pay and red lines"
+      }
+    ]
+  },
+  "attention": null,
+  "transcript": [
+    {
+      "slot": "q1.ask",
+      "kind": "ask",
+      "speaker": "moderator",
+      "question": 0,
+      "text": "Welcome, everyone. Today I'd like to talk about how you handle your spare money, your real experiences and how they felt. There are no right answers here, so just say whatever comes to mind. Let's start with now: how do you manage your spare money, and what was the last money decision you agonised over or regretted?"
+    },
+    {
+      "slot": "q1.p1",
+      "kind": "answer",
+      "speaker": "p1",
+      "question": 0,
+      "text": "I'll go first. Right now it's basically Yu'e Bao and bank deposits; bottom line, I don't dare touch anything. My regret is a classic: just before Chinese New Year 2021 I followed a colleague into baijiu and new-energy funds on Alipay, and they started falling the moment I bought. I was down 35% at the worst, sold half, and the rest is still sitting there. These days when I open Alipay and see all that green, I just want to close it."
+    },
+    {
+      "slot": "q1.p2",
+      "kind": "answer",
+      "speaker": "p2",
+      "question": 0,
+      "text": "I'm the opposite of Wang Li. I invest every month, ¥3,000 each into the CSI 300 and the S&P 500, no matter what; it's about ¥250k now. I did chase a hot fund once, a semiconductor theme fund in 2020, and after that I made myself a rule: broad index funds only. The real headache was buying US ETFs. I needed a Hong Kong brokerage account, and opening it plus converting currency took over a month. I nearly gave up."
+    },
+    {
+      "slot": "q1.p3",
+      "kind": "answer",
+      "speaker": "p3",
+      "question": 0,
+      "text": "At our age, safe and steady comes first. Most of mine is in deposits and government bonds, plus a participating insurance policy. My biggest regret is a product I bought at the bank in 2022. The wealth manager told me it was \"steady, better than a deposit\", and then its value fell below par. For months I couldn't sleep. Only later did I learn it was a non-guaranteed, mark-to-market product. When I signed, nobody explained that to me."
+    },
+    {
+      "slot": "q1.p4",
+      "kind": "answer",
+      "speaker": "p4",
+      "question": 0,
+      "text": "Listening to you all makes me a bit sheepish... My income isn't steady, so my money is mostly in Yu'e Bao and WeChat Change, a bit over ¥60k. Last year an influencer on Xiaohongshu got me into a gold savings plan and a healthcare fund, and both dropped as soon as I bought. I hardly dare open the app now. I feel like I'm a bit like Wang Li: the moment I lose money, I don't want to face it."
+    },
+    {
+      "slot": "q1.p5",
+      "kind": "answer",
+      "speaker": "p5",
+      "question": 0,
+      "text": "My situation is probably different. I have a dedicated adviser at a private bank, and I hold some equity funds, private fixed income and Hong Kong insurance. Honestly, a single loss doesn't bother me much. What bothers me is that I can't tell how much of what my adviser recommends is good for me and how much is just high commission. And my accounts are scattered across four or five places; I still haven't worked out what I've made overall."
+    },
+    {
+      "slot": "q1.probe",
+      "kind": "probe",
+      "speaker": "moderator",
+      "question": 0,
+      "text": "Xiaowen, you said you \"hardly dare open the app\". Could you say more about that? What are you planning to do with that healthcare fund?",
+      "targets": [
+        "p4"
+      ]
+    },
+    {
+      "slot": "q1.probe.p4",
+      "kind": "answer",
+      "speaker": "p4",
+      "question": 0,
+      "text": "It's just... every time I'm about to open it, I'm scared it's lost even more, so out of sight, out of mind. I don't know whether to sell or buy more. Some people online say wait for the \"smile curve\", others say cut your losses, and the more I read the more confused I get. And with my income, if I get no work one month, do I have to take that money out? I can't even tell which money counts as my emergency fund.",
+      "probe": true
+    },
+    {
+      "slot": "q2.ask",
+      "kind": "ask",
+      "speaker": "moderator",
+      "question": 1,
+      "text": "Your experiences are quite different: some of you don't dare move, some of you set yourselves rules, some care most about whether the adviser is on your side. Let's go a level deeper: when it comes to investing, which part gives you the biggest headache?"
+    },
+    {
+      "slot": "q2.p2",
+      "kind": "answer",
+      "speaker": "p2",
+      "question": 1,
+      "text": "For me the problem isn't too little information, it's too much noise. Open any app and the home screen is a chart of funds that made 68% last year, plus livestreams and influencers. My approach is: check the fees, check the index, hold for the long run. Once your rules are set it's not that hard. The hard part is keeping your hands off."
+    },
+    {
+      "slot": "q2.p3",
+      "kind": "answer",
+      "speaker": "p3",
+      "question": 1,
+      "text": "Zihao, fees and indexes, people my age really can't follow that. My headache is understanding the risk. The contract is dozens of pages in tiny print, and the banking app shows a risk level, R2, R3, but what does that mean I could lose? Nobody tells me in plain words. I don't mind earning less; I mind losing my principal."
+    },
+    {
+      "slot": "q2.p4",
+      "kind": "answer",
+      "speaker": "p4",
+      "question": 1,
+      "text": "I agree with Uncle Liu about not understanding. I only recently figured out the difference between the seven-day annualised yield and the one-year return. The other thing is not knowing how to split my money, what stays as an emergency fund and what can be invested; nobody has ever worked that out with me. Every time I try to learn, three paragraphs into an article it's all jargon, and I close it."
+    },
+    {
+      "slot": "q2.p5",
+      "kind": "answer",
+      "speaker": "p5",
+      "question": 1,
+      "text": "My pain points are about seeing the whole picture and seeing through it. The whole picture: my money is spread over four or five institutions and no single place can tell me my overall allocation and real return; every app only shows the numbers that flatter it. Seeing through it: the fees behind each product, management fee, custody fee, sales service fee. What do they take from me in a year? I have to get out a calculator."
+    },
+    {
+      "slot": "q2.p1",
+      "kind": "answer",
+      "speaker": "p1",
+      "question": 1,
+      "text": "Bottom line, all I want to know is two things: how much could this lose at worst, and what makes it better than my Yu'e Bao. But the app is all return charts and \"bestseller\" tags, and when it drops there isn't even a notification. For me the hardest part is holding: when it drops I panic, when I panic I do something stupid, and then I lose even more."
+    },
+    {
+      "slot": "q2.probe",
+      "kind": "probe",
+      "speaker": "moderator",
+      "question": 1,
+      "text": "Zihao says the hard part is keeping your hands off; Wang Li says she panics when it drops. Zihao, how do you manage not to react when it falls? Wang Li, hearing his approach, would it work for you?",
+      "targets": [
+        "p2",
+        "p1"
+      ]
+    },
+    {
+      "slot": "q2.probe.p2",
+      "kind": "answer",
+      "speaker": "p2",
+      "question": 1,
+      "text": "I write the rules in advance: broad index funds only, a fixed monthly debit, and I only add extra by hand if it's down more than 20%. Then I turn off every app notification. Basically, rules replace emotions. But I'll admit I'm single, no mortgage, no kids; if I lose money I skip a few hotpot dinners. My cushion for riding out swings isn't the same as Wang Li's.",
+      "probe": true
+    },
+    {
+      "slot": "q2.probe.p1",
+      "kind": "answer",
+      "speaker": "p1",
+      "question": 1,
+      "text": "That sounds sensible, but it's not that simple for me. It's not that I don't know to think long term; I'm just not sure what I bought is worth holding long term, and without that confidence I can't set rules. I need someone to first explain what the thing is and what the worst case looks like; only then could I keep my hands off. Turning off notifications, though, I could learn from.",
+      "probe": true
+    },
+    {
+      "slot": "q3.ask",
+      "kind": "ask",
+      "speaker": "moderator",
+      "question": 2,
+      "text": "Several of you mentioned not understanding and not feeling sure. So, for money information and advice, who do you trust most, who do you trust least, and why?"
+    },
+    {
+      "slot": "q3.p3",
+      "kind": "answer",
+      "speaker": "p3",
+      "question": 2,
+      "text": "I used to trust the banks most; I thought the big state banks would never cheat anyone. After 2022 that trust took a hit. Now I trust myself and my family most; if my daughter has looked at it, I feel safe. Who I trust least: people who cold-call, and short videos promising \"guaranteed gains\". Several old folks in our neighbourhood were scammed that way."
+    },
+    {
+      "slot": "q3.p4",
+      "kind": "answer",
+      "speaker": "p4",
+      "question": 2,
+      "text": "Honestly, what I read most is Xiaohongshu and Bilibili, because the creators explain things simply. But I'm a bit scared now: that healthcare fund was an influencer's pick, and I found out afterwards she had a sponsorship deal. Who I trust most is probably friends who know more than me; at least they won't cheat me. I just feel bad asking them all the time."
+    },
+    {
+      "slot": "q3.p5",
+      "kind": "answer",
+      "speaker": "p5",
+      "question": 2,
+      "text": "With any advice, my first question is: what's the incentive behind this? My private-bank adviser is a professional, but his targets are tied to sales, and that structure means he can never be fully on my side. I trust people whose fees are transparent, who charge for advice and don't sell products. Sadly there are very few of them here."
+    },
+    {
+      "slot": "q3.p1",
+      "kind": "answer",
+      "speaker": "p1",
+      "question": 2,
+      "text": "I feel the same as Sun Hao: anyone selling something, I don't trust. Recommendations on the app's home screen, calls from the bank, I treat all of them with suspicion. These days I actually read funds' quarterly reports and holdings, even though I don't really understand them. Honestly, the person I'd most like to trust is someone who doesn't sell anything and can explain it to me in plain words. I just haven't found them."
+    },
+    {
+      "slot": "q3.p2",
+      "kind": "answer",
+      "speaker": "p2",
+      "question": 2,
+      "text": "I trust data most: fund announcements, index methodology, fees, hard facts. I do read influencers, but only for their reasoning, never for their picks. What I trust least is the app's \"you might like\" and the return rankings; those are ad slots, whoever pays gets the spot. I do use AI to read announcements for me, though. It's much faster than reading them myself."
+    },
+    {
+      "slot": "q3.probe",
+      "kind": "probe",
+      "speaker": "moderator",
+      "question": 2,
+      "text": "Uncle Liu, you said your trust in the bank took a hit after 2022. What would a financial channel have to do for you to trust it again?",
+      "targets": [
+        "p3"
+      ]
+    },
+    {
+      "slot": "q3.probe.p3",
+      "kind": "answer",
+      "speaker": "p3",
+      "question": 2,
+      "text": "First, before selling me anything, explain the worst case in plain words, something like \"at worst you could lose a tenth\", and put it in writing. Second, when something goes wrong, someone owns it; they can't vanish once I've signed. Third, don't start by pushing a product. Ask about my situation first. I retire next year; this is my retirement money and it can't take a beating.",
+      "probe": true
+    },
+    {
+      "slot": "q4.ask",
+      "kind": "ask",
+      "speaker": "moderator",
+      "question": 3,
+      "text": "It sounds like explaining things clearly, not pushing products and taking responsibility matter to all of you. So if there were an ideal investing assistant, what would it have to do for you to use it, or even pay for it? Is there a line it must never cross?"
+    },
+    {
+      "slot": "q4.p4",
+      "kind": "answer",
+      "speaker": "p4",
+      "question": 3,
+      "text": "I'd want it to help me split my money first, to tell me how much of this month's income to keep for emergencies and how much I can invest, based on my irregular income. No jargon; ideally it talks to me like a friend. As for paying, ¥20–30 a month I could accept; more than that and I'd hesitate. The line is quietly pushing high-risk stuff on me."
+    },
+    {
+      "slot": "q4.p5",
+      "kind": "answer",
+      "speaker": "p5",
+      "question": 3,
+      "text": "For me it comes down to two things: first, pull together the assets in all my accounts and show me my real return and fees; second, prove it has no conflict of interest, say it takes no money from product providers or hands every commission back to me. Do both and I'd pay a few thousand a year. The line is selling my data, or using my holdings to sell to me."
+    },
+    {
+      "slot": "q4.p1",
+      "kind": "answer",
+      "speaker": "p1",
+      "question": 3,
+      "text": "I want to understand it in three sentences: what it is, how much it could lose at worst, and what makes it better than Yu'e Bao. And when it drops, don't play dead; tell me what happened and whether I should do anything. I'm torn about paying. If it really sells nothing and just looks out for me, I'd try it, but let me see if it's any good for free first. The line is any kind of product pushing; the moment I spot it, I uninstall."
+    },
+    {
+      "slot": "q4.p2",
+      "kind": "answer",
+      "speaker": "p2",
+      "question": 3,
+      "text": "I'd want it to enforce my rules: automatic monthly investing, rebalancing reminders at the ratios I set, and ideally it would manage my Hong Kong and US accounts too and work out the currency and tax stuff. AI reading announcements and comparing fees, I'd really use that; ¥100–200 a year on subscription is fine. The line is \"smart recommendations\", and opaque algorithms deciding for me."
+    },
+    {
+      "slot": "q4.p3",
+      "kind": "answer",
+      "speaker": "p3",
+      "question": 3,
+      "text": "I'd want a real person I can ask. Not necessarily face to face, but someone who answers the phone, and what they say has to count. Big text on the phone, simple steps, and ideally my daughter can see my account too. I'm not used to paying for this, but if it really keeps my retirement money safe, a few hundred is fine. The line is throwing around words like \"guaranteed\"; if you say it, you're responsible for it."
+    },
+    {
+      "slot": "close.ask",
+      "kind": "close",
+      "speaker": "moderator",
+      "question": 4,
+      "text": "Thank you all for being so open today. To finish, please each say in a sentence or two: if you could change just one thing about financial services, what would it be?"
+    },
+    {
+      "slot": "close.p5",
+      "kind": "final",
+      "speaker": "p5",
+      "question": 4,
+      "text": "Put the incentives on the table: users should see at a glance how the person advising them gets paid."
+    },
+    {
+      "slot": "close.p1",
+      "kind": "final",
+      "speaker": "p1",
+      "question": 4,
+      "text": "Stop showing me return rankings and tell me in plain words how much I could lose at worst."
+    },
+    {
+      "slot": "close.p2",
+      "kind": "final",
+      "speaker": "p2",
+      "question": 4,
+      "text": "Remove the ad slots, make the fees and rules transparent, and leave the rest to my own discipline."
+    },
+    {
+      "slot": "close.p3",
+      "kind": "final",
+      "speaker": "p3",
+      "question": 4,
+      "text": "Explain it before you sell it and own it when it goes wrong; that matters more than a few extra points of return."
+    },
+    {
+      "slot": "close.p4",
+      "kind": "final",
+      "speaker": "p4",
+      "question": 4,
+      "text": "I'd like someone to help me sort my money first and teach me step by step, instead of asking me to pick a product right away."
+    }
+  ],
+  "report": {
+    "headline": "People don't lack products; they lack advice they can understand, trust and hold someone to",
+    "summary": "The five participants differ widely in wealth and experience, yet their pain points converge: they can't read risk or fees, can't tell who is selling, and hear nothing when markets fall. Newcomers and people near retirement most need plain words and a clear worst case; experienced investors care more about a combined view, transparent fees and help sticking to rules. Everyone is wary of product pushing, which is the shared red line for an ideal service.",
+    "findings": [
+      {
+        "title": "Not understanding puts people off more than losing money",
+        "detail": "Wang Li, Liu Jianguo and Zhao Xiaowen all put not understanding risk and jargon first: they don't know what a risk level means they could lose, or how return figures differ. Not understanding leads either to doing nothing or to following the crowd in and panicking at the first drop.",
+        "evidence": "strong",
+        "participants": [
+          "p1",
+          "p3",
+          "p4"
+        ],
+        "quotes": [
+          {
+            "speaker": "p3",
+            "text": "I don't mind earning less; I mind losing my principal."
+          },
+          {
+            "speaker": "p1",
+            "text": "all I want to know is two things: how much could this lose at worst, and what makes it better than my Yu'e Bao."
+          },
+          {
+            "speaker": "p4",
+            "text": "Every time I try to learn, three paragraphs into an article it's all jargon, and I close it."
+          }
+        ]
+      },
+      {
+        "title": "Trust starts with not selling and transparent incentives",
+        "detail": "Bank wealth managers, app recommendation slots and sponsored influencers are all seen as people selling something. Sun Hao distrusts sales-driven advisers because of how they are paid; Wang Li and Zhao Xiaowen are wary after being burned by recommendations and influencers. They would trust advisers who charge transparently and sell nothing, but say they can't find any.",
+        "evidence": "strong",
+        "participants": [
+          "p1",
+          "p3",
+          "p4",
+          "p5"
+        ],
+        "quotes": [
+          {
+            "speaker": "p5",
+            "text": "With any advice, my first question is: what's the incentive behind this?"
+          },
+          {
+            "speaker": "p1",
+            "text": "anyone selling something, I don't trust."
+          },
+          {
+            "speaker": "p4",
+            "text": "I found out afterwards she had a sponsorship deal"
+          }
+        ]
+      },
+      {
+        "title": "Silence during a fall turns worry into panic",
+        "detail": "Wang Li and Zhao Xiaowen sold at a loss or stopped looking when prices fell, partly because nobody explained what was happening. Chen Zihao fights emotion with rules written in advance and notifications switched off, but admits his cushion for riding out swings is not the same as someone with a family.",
+        "evidence": "moderate",
+        "participants": [
+          "p1",
+          "p4",
+          "p2"
+        ],
+        "quotes": [
+          {
+            "speaker": "p1",
+            "text": "when it drops there isn't even a notification"
+          },
+          {
+            "speaker": "p4",
+            "text": "so out of sight, out of mind"
+          },
+          {
+            "speaker": "p2",
+            "text": "Basically, rules replace emotions."
+          }
+        ]
+      },
+      {
+        "title": "The more spread out the money, the less anyone sees the whole",
+        "detail": "Sun Hao's assets sit at four or five institutions and he has never seen his overall return or fees; Chen Zihao's Hong Kong and US accounts are cut off from his domestic ones, leaving currency and tax for him to work out. The more assets and accounts people have, the more they need one independent combined view.",
+        "evidence": "moderate",
+        "participants": [
+          "p5",
+          "p2"
+        ],
+        "quotes": [
+          {
+            "speaker": "p5",
+            "text": "no single place can tell me my overall allocation and real return"
+          },
+          {
+            "speaker": "p2",
+            "text": "opening it plus converting currency took over a month"
+          }
+        ]
+      },
+      {
+        "title": "For newcomers, step one is sorting the money, not choosing products",
+        "detail": "Zhao Xiaowen's income is irregular and she can't tell emergency money from money to invest; Liu Jianguo stresses that his is retirement money. They want a service to understand their situation and plan what the money is for before talking about products.",
+        "evidence": "weak",
+        "participants": [
+          "p4",
+          "p3"
+        ],
+        "quotes": [
+          {
+            "speaker": "p4",
+            "text": "I can't even tell which money counts as my emergency fund."
+          },
+          {
+            "speaker": "p3",
+            "text": "this is my retirement money and it can't take a beating"
+          }
+        ]
+      }
+    ],
+    "pain_points": [
+      {
+        "title": "Risk levels and jargon are unreadable",
+        "detail": "No idea what R2 or R3 means they could lose; can't tell a seven-day annualised yield from a one-year return.",
+        "participants": [
+          "p3",
+          "p4",
+          "p1"
+        ]
+      },
+      {
+        "title": "Return rankings and recommendation slots mislead",
+        "detail": "Home screens push short-term winners; following them led to losses.",
+        "participants": [
+          "p1",
+          "p2",
+          "p4"
+        ]
+      },
+      {
+        "title": "Hidden incentives behind advice",
+        "detail": "No way to tell whether an adviser's or influencer's pick is driven by commission or sponsorship.",
+        "participants": [
+          "p5",
+          "p4",
+          "p1"
+        ]
+      },
+      {
+        "title": "No explanation when prices fall",
+        "detail": "Unsure whether to hold or sell, people look away or sell at a loss.",
+        "participants": [
+          "p1",
+          "p4"
+        ]
+      },
+      {
+        "title": "Assets and fees across accounts can't be seen together",
+        "detail": "Money spread over several institutions; real returns and total fees have to be worked out by hand.",
+        "participants": [
+          "p5",
+          "p2"
+        ]
+      },
+      {
+        "title": "High friction",
+        "detail": "Opening overseas accounts and converting currency is slow; banking apps have tiny text and complex steps, so older users rely on family.",
+        "participants": [
+          "p2",
+          "p3"
+        ]
+      }
+    ],
+    "needs": [
+      {
+        "title": "The worst case in plain words",
+        "detail": "Before buying, say how much could be lost at most, compared with familiar options like Yu'e Bao or deposits.",
+        "participants": [
+          "p1",
+          "p3",
+          "p4"
+        ]
+      },
+      {
+        "title": "Independent advice without conflicts of interest",
+        "detail": "Advisers' fees are transparent; no commission from product providers, or commissions handed back.",
+        "participants": [
+          "p5",
+          "p1",
+          "p3"
+        ]
+      },
+      {
+        "title": "Plan the money before suggesting products",
+        "detail": "Based on income stability and purpose, first set aside emergency money, retirement money and money to invest.",
+        "participants": [
+          "p4",
+          "p3"
+        ]
+      },
+      {
+        "title": "Explanations when markets fall",
+        "detail": "Tell users what happened and whether they need to act.",
+        "participants": [
+          "p1",
+          "p4"
+        ]
+      },
+      {
+        "title": "One view of all assets, with fees laid bare",
+        "detail": "Combine holdings across institutions and show real returns and the fees actually charged each year.",
+        "participants": [
+          "p5",
+          "p2"
+        ]
+      },
+      {
+        "title": "Help sticking to rules",
+        "detail": "Automatic investing and rebalancing reminders to cut emotional trading.",
+        "participants": [
+          "p2"
+        ]
+      }
+    ],
+    "disagreements": [
+      {
+        "topic": "Is the hard part understanding, or keeping your hands off?",
+        "sides": [
+          {
+            "participants": [
+              "p2"
+            ],
+            "view": "There is plenty of information; the hard part is using rules to manage emotion, and holding broad index funds long term isn't hard."
+          },
+          {
+            "participants": [
+              "p1",
+              "p4"
+            ],
+            "view": "Without knowing whether what they hold is worth keeping, they can't set rules; someone has to explain it first."
+          }
+        ]
+      },
+      {
+        "topic": "Do people need a human?",
+        "sides": [
+          {
+            "participants": [
+              "p3"
+            ],
+            "view": "There must be a real person to reach, whose word counts and who takes responsibility."
+          },
+          {
+            "participants": [
+              "p2"
+            ],
+            "view": "Trusts data and tools more; happy for AI to read announcements and compare fees, no human recommendations needed."
+          }
+        ]
+      },
+      {
+        "topic": "How much is advice worth?",
+        "sides": [
+          {
+            "participants": [
+              "p5",
+              "p2"
+            ],
+            "view": "Would pay yearly if it is independent and transparent."
+          },
+          {
+            "participants": [
+              "p1",
+              "p4",
+              "p3"
+            ],
+            "view": "Would try a small fee, but it has to prove itself first; price-sensitive."
+          }
+        ]
+      }
+    ],
+    "stances": [
+      {
+        "participant": "p1",
+        "stance": "mixed",
+        "summary": "Would try a service that sells nothing and explains clearly, but has zero tolerance for product pushing."
+      },
+      {
+        "participant": "p2",
+        "stance": "positive",
+        "summary": "Likes tool-like, transparent services and would pay for rule enforcement and reading announcements."
+      },
+      {
+        "participant": "p3",
+        "stance": "mixed",
+        "summary": "Still distrusts the industry; would consider a service only if it explains the worst case and owns its mistakes."
+      },
+      {
+        "participant": "p4",
+        "stance": "positive",
+        "summary": "Wants help sorting her money and step-by-step teaching; a small fee is acceptable."
+      },
+      {
+        "participant": "p5",
+        "stance": "positive",
+        "summary": "Would pay for an independent, conflict-free combined view and advice."
+      }
+    ],
+    "opportunities": [
+      {
+        "title": "A three-sentence product card",
+        "detail": "Every product explained in one format: what it is, how much it could lose at worst (with an amount), and what it does better than Yu'e Bao or a deposit.",
+        "priority": "high",
+        "related": [
+          1
+        ]
+      },
+      {
+        "title": "Incentive disclosure labels",
+        "detail": "Show next to every recommendation how the recommender is paid (sales commission, sponsorship or an independent advice fee), and offer commission-free or commission-rebate options.",
+        "priority": "high",
+        "related": [
+          2
+        ]
+      },
+      {
+        "title": "Proactive explanations when prices fall",
+        "detail": "When holdings drop past a threshold, explain in plain words why, what happened in similar past episodes and whether any action is needed, instead of staying silent.",
+        "priority": "high",
+        "related": [
+          3
+        ]
+      },
+      {
+        "title": "A money-sorting guide",
+        "detail": "Using income stability, family obligations and purpose, help users set aside emergency, retirement and investable money before suggesting an allocation.",
+        "priority": "medium",
+        "related": [
+          5
+        ]
+      },
+      {
+        "title": "A combined view of all assets",
+        "detail": "Pull holdings from several institutions together and show real returns and total yearly fees, for experienced users with scattered accounts.",
+        "priority": "medium",
+        "related": [
+          4
+        ]
+      },
+      {
+        "title": "Senior mode and family access",
+        "detail": "Large text, simpler steps, optional shared viewing with adult children, and a real person on the phone.",
+        "priority": "low",
+        "related": [
+          1,
+          2
+        ]
+      }
+    ],
+    "validate": [
+      "Do real users also rank not understanding the worst case first? Is the ranking the same across age groups?",
+      "Does a three-sentence product card actually reduce chasing returns and panic selling?",
+      "How much will users pay for independent advice, and how long a free trial does trust take?",
+      "Do incentive disclosure labels build trust or make users more wary?",
+      "How do older users feel about family access, and what privacy worries does it raise?"
+    ],
+    "limitations": "AI played the participants from their personas; their views are focused and articulate, so they may come across as more rational and forthcoming than real users. There were only five people, and smaller towns and rural users were not covered. Use the conclusions to form hypotheses and design an interview guide, then check them with real interviews or a survey."
+  },
+  "usage": null,
+  "models": [],
+  "elapsed_seconds": null
+}

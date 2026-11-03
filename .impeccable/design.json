@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-02T16:26:06+00:00",
+  "generatedAt": "2026-11-03T10:33:21+00:00",
   "title": "Design System: 焦点 Focal",
   "extensions": {
     "colorMeta": {
@@ -293,7 +293,7 @@
       },
       "title-sm": {
         "displayName": "Title Small",
-        "purpose": "Results block heading."
+        "purpose": "Results block heading; focus-group plan title and report headline."
       },
       "lead": {
         "displayName": "Lead",
@@ -301,7 +301,7 @@
       },
       "body": {
         "displayName": "Body",
-        "purpose": "Default text. Latin renders in Figtree (unicode-range subset), Chinese in the system CJK sans."
+        "purpose": "Default text. Latin renders in Figtree (unicode-range subset), Chinese in the system CJK sans. Transcript turns at Body (moderator at 500), max 72ch; report prose 70ch."
       },
       "button": {
         "displayName": "Button",
@@ -313,7 +313,7 @@
       },
       "meta": {
         "displayName": "Meta",
-        "purpose": "Dimensions, captions, fineprint (13px), status hints (13px)."
+        "purpose": "Dimensions, captions, fineprint (13px), status hints (13px). Transcript meta lines (13px Ink Tertiary)."
       },
       "numeric": {
         "displayName": "Numeric",
@@ -383,6 +383,11 @@
         "purpose": "White sheen sweeping across a working stage."
       },
       {
+        "name": "caret",
+        "value": "1s steps(2, start) infinite",
+        "purpose": "Live transcript caret (Ink Tertiary) blinks; under reduced motion it stays visible and still."
+      },
+      {
         "name": "reduced-motion",
         "value": "0.01ms",
         "purpose": "prefers-reduced-motion collapses all animation and transition durations."
@@ -392,12 +397,12 @@
       {
         "name": "mobile",
         "value": "767px",
-        "purpose": "max-width: gutter 16px, header 56px, nav on its own scrolling row without icons, single-column features, stage padding 12px."
+        "purpose": "max-width: gutter 16px, header 56px, nav on its own full-bleed scrolling row without icons (short labels, edge fade where more tools lie beyond), single-column features, stage padding 12px, focus-group sheet padding 16px, 28px transcript avatars."
       },
       {
         "name": "tablet",
         "value": "1023px",
-        "purpose": "max-width: hero stacks, tool panel moves below the stage and stops being sticky, on-stage working pill appears."
+        "purpose": "max-width: hero stacks, tool panel moves below the stage and stops being sticky, on-stage working pill appears; focus-group sticky dock (pill plus Stop)."
       },
       {
         "name": "page",
@@ -472,8 +477,8 @@
       "name": "Navigation",
       "kind": "nav",
       "refersTo": "nav",
-      "description": "Sticky white header; current tool gets ink text and a 2px blue underline on the hairline.",
-      "html": "<header class=\"ds-nav\"><a class=\"ds-brand\" href=\"#\"><svg width=\"30\" height=\"30\" viewBox=\"0 0 32 32\" aria-hidden=\"true\"><rect width=\"32\" height=\"32\" rx=\"9\" fill=\"#1f4fe0\"/><path d=\"M9 13.5v-3A1.5 1.5 0 0 1 10.5 9h3M18.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3M23 18.5v3a1.5 1.5 0 0 1-1.5 1.5h-3M13.5 23h-3A1.5 1.5 0 0 1 9 21.5v-3\" fill=\"none\" stroke=\"#fff\" stroke-width=\"2.2\" stroke-linecap=\"round\"/><circle cx=\"16\" cy=\"16\" r=\"3\" fill=\"#fff\"/></svg><b>焦点</b><span>Focal</span></a><nav><a href=\"#\" aria-current=\"page\">智能抠图</a><a href=\"#\">涂抹消除</a><a href=\"#\">注意力热力图</a></nav><button class=\"ds-lang\">EN</button></header>",
+      "description": "Sticky white header with four tools; current tool gets ink text and a 2px blue underline on the hairline. On phones the row bleeds full width, scrolls, uses short labels and fades the edge that has more tools beyond.",
+      "html": "<header class=\"ds-nav\"><a class=\"ds-brand\" href=\"#\"><svg width=\"30\" height=\"30\" viewBox=\"0 0 32 32\" aria-hidden=\"true\"><rect width=\"32\" height=\"32\" rx=\"9\" fill=\"#1f4fe0\"/><path d=\"M9 13.5v-3A1.5 1.5 0 0 1 10.5 9h3M18.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3M23 18.5v3a1.5 1.5 0 0 1-1.5 1.5h-3M13.5 23h-3A1.5 1.5 0 0 1 9 21.5v-3\" fill=\"none\" stroke=\"#fff\" stroke-width=\"2.2\" stroke-linecap=\"round\"/><circle cx=\"16\" cy=\"16\" r=\"3\" fill=\"#fff\"/></svg><b>焦点</b><span>Focal</span></a><nav><a href=\"#\" aria-current=\"page\">智能抠图</a><a href=\"#\">涂抹消除</a><a href=\"#\">注意力热力图</a><a href=\"#\">AI 焦点小组</a></nav><button class=\"ds-lang\">EN</button></header>",
       "css": ".ds-nav { display: flex; align-items: center; gap: 24px; height: 64px; padding: 0 24px; background: #fff; border-bottom: 1px solid #e2e6ee; font-family: \"Figtree\", \"PingFang SC\", \"HarmonyOS Sans SC\", \"MiSans\", \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"Noto Sans SC\", \"Source Han Sans SC\", system-ui, sans-serif; } .ds-brand { display: inline-flex; align-items: center; gap: 10px; margin-right: auto; color: #10131a; text-decoration: none; } .ds-brand b { font-size: 20px; font-weight: 700; letter-spacing: 0.02em; } .ds-brand span { font-size: 17px; font-weight: 600; color: #626a79; } .ds-nav nav { display: flex; gap: 4px; height: 100%; } .ds-nav nav a { display: inline-flex; align-items: center; padding: 0 12px; color: #454c5a; font-weight: 500; text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s; } .ds-nav nav a:hover { color: #10131a; } .ds-nav nav a[aria-current=\"page\"] { color: #10131a; border-bottom-color: #1f4fe0; } .ds-nav a:focus-visible, .ds-lang:focus-visible { outline: 3px solid rgba(31, 79, 224, 0.38); outline-offset: 2px; } .ds-lang { min-height: 36px; padding: 0 12px; border: 1px solid #c9cfdb; border-radius: 999px; background: #fff; color: #454c5a; font: inherit; font-weight: 600; font-size: 14px; cursor: pointer; } .ds-lang:hover { background: #f5f7fb; color: #10131a; }"
     },
     {
@@ -507,16 +512,41 @@
       "description": "Overlay-ink pill tag on a transparency checkerboard: the two image-surface devices.",
       "html": "<div class=\"ds-checker\"><span class=\"ds-tag\">处理后</span></div>",
       "css": ".ds-checker { position: relative; height: 160px; border-radius: 12px; background-color: #fff; background-image: conic-gradient(#e7eaf1 25%, transparent 0 50%, #e7eaf1 0 75%, transparent 0); background-size: 20px 20px; } .ds-tag { position: absolute; top: 12px; right: 12px; padding: 3px 10px; border-radius: 999px; background: rgba(16, 19, 26, 0.72); color: #fff; font-family: \"Figtree\", \"PingFang SC\", \"HarmonyOS Sans SC\", \"MiSans\", \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"Noto Sans SC\", \"Source Han Sans SC\", system-ui, sans-serif; font-size: 12.5px; font-weight: 600; }"
+    },
+    {
+      "name": "Transcript in a Sheet",
+      "kind": "custom",
+      "refersTo": "sheet",
+      "description": "The focus group's white hairline sheet: moderator turn as a section head under a 2px blue rule, participant turns as monogram, meta line and plain text, live caret on the turn being written.",
+      "html": "<ol class=\"ds-sheet\"><li class=\"ds-turn ds-mod\"><div><p class=\"ds-meta\"><b>主持人</b><span>第 2/4 题</span></p><p class=\"ds-text\">在理财这件事上，哪个环节最让你头疼？</p></div></li><li class=\"ds-turn\"><span class=\"ds-av\">陈</span><div><p class=\"ds-meta\"><b>陈子豪</b><span>27 岁 · 深圳 · 后端程序员</span></p><p class=\"ds-text\">我觉得最头疼的不是信息少，是噪音太多。<span class=\"ds-caret\"></span></p></div></li></ol>",
+      "css": ".ds-sheet { display: grid; gap: 18px; margin: 0; padding: 24px; list-style: none; border: 1px solid #e2e6ee; border-radius: 16px; background: #fff; color: #10131a; font-family: \"Figtree\", \"PingFang SC\", \"HarmonyOS Sans SC\", \"MiSans\", \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"Noto Sans SC\", \"Source Han Sans SC\", system-ui, sans-serif; font-size: 16px; line-height: 1.6; } .ds-turn { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; align-items: start; } .ds-mod { grid-template-columns: minmax(0, 1fr); padding-left: 16px; border-left: 2px solid #1f4fe0; } .ds-mod .ds-text { font-weight: 500; } .ds-av { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #eceff6; color: #10131a; font-size: 15px; font-weight: 700; line-height: 1; } .ds-meta { display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; margin: 0; font-size: 13px; color: #626a79; } .ds-meta b { font-size: 14px; color: #10131a; } .ds-text { margin: 2px 0 0; max-width: 72ch; } .ds-caret { display: inline-block; width: 2px; height: 1.05em; margin-left: 2px; vertical-align: -0.15em; background: #626a79; animation: ds-caret 1s steps(2, start) infinite; } @keyframes ds-caret { to { visibility: hidden; } } @media (prefers-reduced-motion: reduce) { .ds-caret { animation: none; } }"
+    },
+    {
+      "name": "Tags and Ref Chips",
+      "kind": "chip",
+      "refersTo": "tag",
+      "description": "Status colours only where the tag is data (stance, severity, match); evidence, priority and level stay neutral. Ref chips name screenshots.",
+      "html": "<p class=\"ds-tags\"><span class=\"ds-tag ds-pos\">支持</span><span class=\"ds-tag ds-mix\">中等</span><span class=\"ds-tag ds-neg\">高</span><span class=\"ds-tag\">多人提到</span><span class=\"ds-ref\">图 1</span></p>",
+      "css": ".ds-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; font-family: \"Figtree\", \"PingFang SC\", \"HarmonyOS Sans SC\", \"MiSans\", \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"Noto Sans SC\", \"Source Han Sans SC\", system-ui, sans-serif; } .ds-tag, .ds-ref { display: inline-flex; align-items: center; border-radius: 999px; background: #eceff6; color: #454c5a; font-size: 12.5px; font-weight: 600; line-height: 1.6; white-space: nowrap; } .ds-tag { padding: 1px 8px; } .ds-ref { padding: 0 8px; line-height: 1.7; font-variant-numeric: tabular-nums; } .ds-pos { background: #e8f5ec; color: #157f3c; } .ds-neg { background: #fdecec; color: #7d1717; } .ds-mix { background: #fdf3e3; color: #6b3b00; }"
+    },
+    {
+      "name": "Finding with Quote and Split Bar",
+      "kind": "custom",
+      "refersTo": "quote",
+      "description": "Report finding: numbered circle, title with neutral evidence tag, verbatim quote on Cool Surface (10px), and a stance split bar as a data mark.",
+      "html": "<div class=\"ds-finding\"><span class=\"ds-n\">1</span><div><h4>信息太多，反而不知道信谁 <span class=\"ds-etag\">多人提到</span></h4><p class=\"ds-quote\">我觉得最头疼的不是信息少，是噪音太多。<span class=\"ds-by\"><span class=\"ds-avx\">陈</span>陈子豪</span></p><div class=\"ds-bar\" role=\"img\" aria-label=\"正面 2, 中立 1, 复杂 1, 负面 1\"><span style=\"flex-grow:2;background:#157f3c\"></span><span style=\"flex-grow:1;background:#626a79\"></span><span style=\"flex-grow:1;background:#a35a00\"></span><span style=\"flex-grow:1;background:#c42b2b\"></span></div></div></div>",
+      "css": ".ds-finding { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; align-items: start; color: #10131a; font-family: \"Figtree\", \"PingFang SC\", \"HarmonyOS Sans SC\", \"MiSans\", \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"Noto Sans SC\", \"Source Han Sans SC\", system-ui, sans-serif; line-height: 1.6; } .ds-n { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #eceff6; font-size: 14px; font-weight: 700; } .ds-finding h4 { margin: 0; font-size: 17px; line-height: 1.45; } .ds-etag { padding: 1px 8px; border-radius: 999px; background: #eceff6; color: #454c5a; font-size: 12.5px; font-weight: 600; } .ds-quote { margin: 12px 0 0; padding: 10px 14px; border-radius: 10px; background: #f5f7fb; font-size: 15px; } .ds-by { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 13px; color: #626a79; } .ds-avx { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #eceff6; color: #10131a; font-size: 10.5px; font-weight: 700; } .ds-bar { display: flex; gap: 2px; max-width: 560px; height: 10px; margin-top: 14px; overflow: hidden; border-radius: 999px; background: #eceff6; }"
     }
   ],
   "narrative": {
     "northStar": "The Honest Workbench",
-    "overview": "**Creative North Star: \"The Honest Workbench\"**\n\nFocal is the familiar online image tool, played straight and finished well: a white page, cool grey working surfaces, near-black ink and one confident blue. Nothing pretends to be magic. The only pictures are real photographs and real outputs of the site's own tools, and the checkerboard is the one pattern in the system because it means something: transparency. The craft bar is remove.bg and Canva (可画), and the system meets it through restraint. Hairline borders, generous rounded containers, and a single soft lift on the comparison stage.\n\nTwo modes share one world. Home persuades: a two-column hero with a working dropzone on the left and a live before/after stage on the right, then a band of plain promises and alternating feature rows of real output pairs. The three tools (/cutout, /erase, /heatmap) operate: the same tokens arranged into one fixed grammar of stage, panel and results. Density stays comfortable rather than compact. Chinese leads, English is equal, and every layout holds both.\n\nThe system rejects \"AI magic\" gradients, hype styling, dark-mode theatrics, and walls of icon tiles with no real output behind them.",
+    "overview": "**Creative North Star: \"The Honest Workbench\"**\n\nFocal is the familiar online image tool, played straight and finished well: a white page, cool grey working surfaces, near-black ink and one confident blue. Nothing pretends to be magic. The only pictures are real photographs and real outputs of the site's own tools, and the checkerboard is the one pattern in the system because it means something: transparency. The craft bar is remove.bg and Canva (可画), and the system meets it through restraint. Hairline borders, generous rounded containers, and a single soft lift on the comparison stage.\n\nTwo modes share one world. Home persuades: a two-column hero with a working dropzone on the left and a live before/after stage on the right, then a band of plain promises and alternating feature rows of real output pairs (and, for the focus group, a real transcript excerpt). The four tools (/cutout, /erase, /heatmap, /focus-group) operate: the same tokens arranged into one fixed grammar of stage, panel and results. Where a tool's content is a document rather than a picture (the AI focus group's brief, roster and transcript), the stage becomes a white hairline sheet; everything else in the grammar holds. Density stays comfortable rather than compact. Chinese leads, English is equal, and every layout holds both.\n\nThe system rejects \"AI magic\" gradients, hype styling, dark-mode theatrics, and walls of icon tiles with no real output behind them.",
     "keyCharacteristics": [
       "White ground, cool grey surfaces, near-black ink; one blue, used for action, focus, selection and the brand mark.",
       "Checkerboard means transparency, and is used for nothing else.",
       "Rounded containers (12–16px), 10px controls, pills for chips, tags and toggles.",
       "Hairline borders carry structure; one soft shadow lifts the comparison stage.",
+      "People are monogram circles, never faces; conversation is a transcript, never chat bubbles.",
       "Figtree for Latin, system CJK sans for Chinese, tabular numerals for every reading.",
       "Every state is visible: empty, working with elapsed seconds, done, error with retry."
     ],
@@ -533,7 +563,7 @@
       },
       {
         "name": "The Real Pixels Rule",
-        "body": "Imagery is real photographs or real outputs of the three tools, each with recorded provenance. No illustration, stock mood imagery, or generated art.",
+        "body": "Imagery is real photographs or real outputs of the tools, each with recorded provenance. No illustration, stock mood imagery, or generated art; AI focus-group participants are monogram circles, never generated faces.",
         "section": "colors"
       },
       {
@@ -548,14 +578,16 @@
       },
       {
         "name": "The One Lift Rule",
-        "body": "One soft shadow per page, on the comparison stage. Panels, cards, toolbars and tool stages stay flat and bordered.",
+        "body": "One soft shadow per page, on the comparison stage. Panels, cards, toolbars, tool stages and the focus-group sheet stay flat and bordered.",
         "section": "elevation"
       }
     ],
     "dos": [
       "Do keep exactly one solid Focal Blue button per panel or block: the next step.",
       "Do grey out a disabled primary (Cool Surface Deep, Ink Tertiary text) instead of fading the blue.",
-      "Do make the stage the drop target and keep it a drop target after an image is loaded.",
+      "Do make the stage the drop target and keep it a drop target after an image is loaded; inside the focus-group sheet the screenshot trays are the drop targets.",
+      "Do set document-shaped tool content (brief, roster, transcript) on the white hairline sheet, and keep picture work on the cool-grey stage.",
+      "Do show people as monogram circles and conversation as a transcript: moderator turns under a 2px blue rule, participant turns as avatar, meta line and plain text.",
       "Do put errors in a banner above the stage, in plain words, with a retry button.",
       "Do show elapsed seconds while working, in tabular numerals, and say plainly when the server is slow.",
       "Do use the checkerboard behind every transparent result and as the transparent swatch.",
@@ -565,9 +597,10 @@
     ],
     "donts": [
       "Don't add a second accent hue; status colours are for status and data only.",
-      "Don't use decorative gradients, glows or \"AI magic\" colour washes. Gradients appear only where they carry meaning: the checkerboard, the working sheen, the colour-picker swatch.",
+      "Don't use decorative gradients, glows or \"AI magic\" colour washes. Gradients appear only where they carry meaning: the checkerboard, the working sheen, the colour-picker swatch, and the phone nav's edge fade where more tools lie beyond.",
       "Don't put shadows on panels, cards, toolbars or tool stages; the comparison stage is the one lift.",
-      "Don't use illustrations, stock photography or generated imagery; show real outputs with provenance.",
+      "Don't use illustrations, stock photography or generated imagery; show real outputs with provenance. No generated persona faces.",
+      "Don't render AI conversation as chat bubbles or with typing-dot animations.",
       "Don't use emoji or Unicode glyphs as icons.",
       "Don't add eyebrow labels or kickers above headings.",
       "Don't introduce a dark theme; the page is light (`color-scheme: light`). Dark appears only as translucent ink pills over imagery and the toast.",

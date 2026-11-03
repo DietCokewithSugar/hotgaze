@@ -1,7 +1,8 @@
 // Home: a working dropzone that hands the image to a tool, and the before/after showcase.
 
-import { onLangChange, t } from "./i18n.js";
+import { lang, onLangChange, t } from "./i18n.js";
 import { $, $$, bindDropzone, compareSlider, h, isImageFile, reducedMotion, toast } from "./core.js";
+import { loadSample, turnNode } from "./focus.js";
 
 const EXAMPLES = {
   cutout: {
@@ -78,7 +79,31 @@ export function init(section, context) {
     });
   }
   selectExample("cutout", { reveal: true });
-  onLangChange(() => applyAlt());
+  renderExcerpt();
+  onLangChange(() => {
+    applyAlt();
+    renderExcerpt();
+  });
+}
+
+/** A few turns of the sample focus group, rendered by the tool's own transcript code. */
+async function renderExcerpt() {
+  const box = $("[data-focus-excerpt]", root);
+  if (!box) return;
+  const language = lang();
+  try {
+    const session = await loadSample(language);
+    if (language !== lang()) return;
+    const turns = session.transcript || [];
+    const start = Math.max(0, turns.findIndex((turn) => turn.slot === "q2.ask"));
+    const picked = turns.slice(start, start + 4);
+    $("[data-excerpt-turns]", box).replaceChildren(...picked.map((turn) => turnNode(turn, session.plan).node));
+    const simulated = (session.generator || "").startsWith("claude");
+    $("[data-excerpt-label]", box).textContent = t("feature.focus.media_label") + (simulated ? t("feature.focus.media_simulated") : "");
+    box.removeAttribute("aria-busy");
+  } catch {
+    box.hidden = true; // the copy beside it still explains the tool
+  }
 }
 
 /** An image arrived (upload, drop or paste): ask which tool to use. */
