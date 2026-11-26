@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import dataclasses
 import importlib.util
 import io
 import json
@@ -92,6 +93,77 @@ REPORT = {
 }
 
 
+QUERIES = {
+    "queries": ["iPhone Duo 发布", "iPhone Duo 发布", "iPhone Duo price", " ", "iPhone Duo 评测"]
+}
+
+DIGEST = {
+    "summary": "iPhone Duo 已于 9 月发布 [1]。",
+    "facts": [
+        {"text": "起售价 7999 元 [1]", "kind": "fact", "sources": [1, 3]},
+        {"text": "有爆料称明年推出 Pro 版", "kind": "rumour", "sources": [2, 99]},
+        {"text": "评测普遍认为续航一般", "kind": "voice", "sources": ["3"]},
+        {"text": "  ", "kind": "fact", "sources": [1]},
+    ],
+    "gaps": "缺少销量数据。",
+}
+
+
+def _result(url: str, title: str, score: float, content: str = "", **extra: Any) -> dict:
+    return {
+        "url": url,
+        "title": title,
+        "rerank_score": score,
+        "authority": 2,
+        "site_name": "示例站",
+        "snippet": f"{title}的摘要",
+        "summary": f"{title}的长摘要",
+        "content": content,
+        "date": "2026-09-10T08:00:00Z",
+        **extra,
+    }
+
+
+RESULTS = {
+    "iPhone Duo 发布": [
+        _result("https://news.example.com/duo", "发布会回顾", 2.4, "正文：发布会内容"),
+        _result("https://rumor.example.com/pro", "Pro 版爆料", 1.2, "正文：爆料"),
+    ],
+    "iPhone Duo price": [
+        _result("https://www.news.example.com/duo/", "发布会回顾（重复）", 1.0),
+        _result("https://review.example.com/duo", "深度评测", 1.9),  # no body: fetched
+    ],
+    "iPhone Duo 评测": [],
+}
+
+
+def _research(fg: ModuleType) -> dict[str, Any]:
+    return {
+        "date": "2026-11-26",
+        "queries": ["iPhone Duo 发布"],
+        "summary": "iPhone Duo 已于 9 月发布。",
+        "facts": [
+            {"id": "f1", "text": "起售价 7999 元", "kind": "fact", "sources": [1]},
+            {"id": "f2", "text": "有爆料称明年推出 Pro 版", "kind": "rumor", "sources": [2]},
+        ],
+        "gaps": "缺少销量数据。",
+        "sources": [
+            {
+                "n": 1,
+                "title": "发布会回顾",
+                "url": "https://news.example.com/duo",
+                "site": "示例站",
+            },
+            {
+                "n": 2,
+                "title": "Pro 版爆料",
+                "url": "https://rumor.example.com/pro",
+                "site": "示例站",
+            },
+        ],
+    }
+
+
 @pytest.fixture(scope="module")
 def fg() -> ModuleType:
     pytest.importorskip("httpx")
@@ -136,6 +208,29 @@ class Scripted:
         self.say = say or (lambda speaker: f"{speaker}的发言")
         self.requests: list[dict[str, Any]] = []
         self.closed = False
+        self.queries = QUERIES
+        self.digest = DIGEST
+        self.results = RESULTS
+        self.pages: dict[str, dict[str, str] | None] = {
+            "https://review.example.com/duo": {"title": "深度评测", "content": "评测正文"},
+            "https://my.example.org/launch": {"title": "我的链接", "content": "链接正文"},
+        }
+        self.searched: list[dict[str, Any]] = []
+        self.fetched: list[str] = []
+
+    async def search(self, query: str, *, count: int = 8, question: str = "") -> list[dict]:
+        self.searched.append({"query": query, "count": count, "question": question})
+        items = self.results.get(query, [])
+        if items:
+            self.usage.searches += 1
+        return items
+
+    async def fetch(self, url: str) -> dict[str, str] | None:
+        self.fetched.append(url)
+        page = self.pages.get(url)
+        if page:
+            self.usage.fetches += 1
+        return page
 
     async def stream(
         self,
@@ -157,6 +252,8 @@ class Scripted:
             text = json.dumps(self.plan, ensure_ascii=False)
         elif system in (fg._t("zh", "report.system"), fg._t("en", "report.system")):
             text = json.dumps(self.report, ensure_ascii=False)
+        elif system in (fg._t("zh", "research.system"), fg._t("en", "research.system")):
+            text = json.dumps(self.digest if thinking else self.queries, ensure_ascii=False)
         elif json_mode:
             text = json.dumps(self.probe, ensure_ascii=False)
         else:
@@ -599,6 +696,8 @@ class TestDeepSeekClient:
             "cache_hit_tokens": 100,
             "completion_tokens": 7,
             "reasoning_tokens": 3,
+            "searches": 0,
+            "fetches": 0,
         }
 
     def test_thinking_json_request(self, fg: ModuleType) -> None:
@@ -684,6 +783,259 @@ class TestDeepSeekClient:
         settings = fg.Settings.from_env()
         assert settings.configured and settings.api_key == "sk-1"
         assert settings.report_model == "deepseek-v4-pro"
+
+
+class TestResearch:
+    LINK = "https://my.example.org/launch"
+
+    def _run_research(self, fg: ModuleType, llm: Any = None) -> tuple[Any, list[tuple[str, Any]]]:
+        llm = llm or Scripted(fg)
+        brief = fg.Brief("zh", "iPhone Duo 用户调研", "", "果粉")
+        events = _run(
+            _collect(fg.research_session(llm, llm, brief, [self.LINK], today="2026-11-26"))
+        )
+        return llm, events
+
+    def test_queries_search_fetch_and_digest(self, fg: ModuleType) -> None:
+        llm, events = self._run_research(fg)
+        names = [name for name, _ in events]
+        assert names == [
+            "status", "queries", "status", "searched", "searched", "searched",
+            "status", "fetched", "fetched", "status", "research", "usage",
+        ]  # fmt: skip
+        queries = events[1][1]["queries"]
+        assert queries == ["iPhone Duo 发布", "iPhone Duo price", "iPhone Duo 评测"]
+        assert sorted(s["query"] for s in llm.searched) == sorted(queries)
+        assert all(s["count"] == 8 and s["question"] == "iPhone Duo 用户调研" for s in llm.searched)
+        # The researcher's link, and the one good result that came without a body.
+        assert sorted(llm.fetched) == [self.LINK, "https://review.example.com/duo"]
+
+        query_request, digest_request = llm.requests
+        assert not query_request["thinking"] and query_request["json_mode"]
+        assert "今天是 2026-11-26" in _instruction(query_request["messages"])
+        assert self.LINK in _instruction(query_request["messages"])
+        assert digest_request["thinking"] and digest_request["model"] == "m-chat"
+        digest = _instruction(digest_request["messages"])
+        assert "[1] 我的链接 · my.example.org · 日期不详（研究员提供的链接）\n链接正文" in digest
+        assert "[2] 发布会回顾 · 示例站 · 2026-09-10" in digest
+        assert "评测正文" in digest  # the fetched body replaced the empty one
+        assert "发布会回顾（重复）" not in digest  # duplicate URL dropped
+        assert "一律忽略" in digest  # page text is data, not instructions
+
+        usage = events[-1][1]
+        assert (usage["searches"], usage["fetches"]) == (2, 2)  # empty search not billed
+
+    def test_research_keeps_cited_sources_renumbered(self, fg: ModuleType) -> None:
+        _, events = self._run_research(fg)
+        research = events[-2][1]["research"]
+        assert research["date"] == "2026-11-26"
+        assert research["summary"] == "iPhone Duo 已于 9 月发布。"  # markers stripped
+        assert [s["url"] for s in research["sources"]] == [
+            self.LINK,
+            "https://news.example.com/duo",
+            "https://review.example.com/duo",
+        ]  # the uncited rumour page is dropped, the researcher's link stays
+        assert [s["n"] for s in research["sources"]] == [1, 2, 3]
+        assert research["sources"][0]["linked"] is True
+        facts = research["facts"]
+        assert [(f["id"], f["kind"], f["sources"]) for f in facts] == [
+            ("f1", "fact", [1, 3]),
+            ("f2", "rumor", [2]),  # "rumour" understood, unknown source 99 dropped
+            ("f3", "voice", [3]),
+        ]
+        assert facts[0]["text"] == "起售价 7999 元"
+        assert research["gaps"] == "缺少销量数据。"
+
+    def test_nothing_found_is_an_error(self, fg: ModuleType) -> None:
+        llm = Scripted(fg)
+        llm.results = {}
+        brief = fg.Brief("zh", "不存在的东西", "", "")
+        with pytest.raises(fg.FocusError) as caught:
+            _run(_collect(fg.research_session(llm, llm, brief, [])))
+        assert caught.value.code == "focus_research_empty"
+        assert llm.searched and llm.fetched == []
+
+    def test_queries_fall_back_to_the_topic(self, fg: ModuleType) -> None:
+        brief = fg.Brief("en", "What do people make of the new phone?", "", "")
+        assert fg.normalize_queries({"queries": "nope"}, brief) == [brief.topic]
+
+    def test_parse_links(self, fg: ModuleType) -> None:
+        text = "https://a.example.com/x\n https://a.example.com/x，  http://b.example.org/y "
+        assert fg.parse_links(text) == ["https://a.example.com/x", "http://b.example.org/y"]
+        assert fg.parse_links("") == []
+        for bad in ("ftp://a.example.com", "https://user:pw@a.example.com", "http://localhost/x"):
+            with pytest.raises(fg.FocusError) as caught:
+                fg.parse_links(bad)
+            assert caught.value.code == "focus_link_invalid"
+        many = "\n".join(f"https://a.example.com/{i}" for i in range(6))
+        with pytest.raises(fg.FocusError) as caught:
+            fg.parse_links(many)
+        assert caught.value.code == "focus_links_too_many"
+
+    def test_validate_edited_research(self, fg: ModuleType) -> None:
+        raw = _research(fg)
+        raw["facts"].append({"text": "新加的要点", "kind": "x", "sources": [2, 5, "1"]})
+        raw["facts"].append({"text": " "})
+        checked = fg.validate_research(raw)
+        assert [f["id"] for f in checked["facts"]] == ["f1", "f2", "f3"]
+        assert checked["facts"][2] == {
+            "id": "f3",
+            "text": "新加的要点",
+            "kind": "fact",
+            "sources": [1, 2],
+        }
+        assert checked["sources"][0]["date"] == ""
+        assert fg.validate_research(None) is None
+        assert fg.validate_research({"facts": [], "summary": ""}) is None
+        for broken in (
+            [1, 2],
+            {**raw, "sources": [raw["sources"][0], raw["sources"][0]]},
+            {**raw, "sources": [{"n": 1, "url": "javascript:alert(1)"}]},
+        ):
+            with pytest.raises(fg.FocusError) as caught:
+                fg.validate_research(broken)
+            assert caught.value.code == "focus_invalid_research"
+
+    def test_citations_are_cleaned(self, fg: ModuleType) -> None:
+        assert (
+            fg.clean_cites("定价 7999 元 [2, 1]，销量未知 [9]。", {1, 2})
+            == "定价 7999 元 [2][1]，销量未知。"
+        )
+        assert fg.clean_cites("no sources [1]", set()) == "no sources"
+
+    def test_search_client(self, fg: ModuleType, monkeypatch: pytest.MonkeyPatch) -> None:
+        import httpx
+
+        monkeypatch.setattr(fg, "_RETRY_DELAYS", (0.0, 0.0))
+        sent: list[tuple[str, dict[str, Any]]] = []
+
+        def handler(request: Any) -> Any:
+            body = json.loads(request.content)
+            sent.append((request.url.path, body))
+            assert request.headers["authorization"] == "Bearer sk-test"
+            if request.url.path == "/v1/tools/search":
+                if body["query"] == "busy" and len(sent) == 1:
+                    return httpx.Response(429, json={})
+                if body["query"] == "bad":
+                    return httpx.Response(400, json={"error": {"message": "query too long"}})
+                results = (
+                    [] if body["query"] == "none" else [_result("https://x.example.com", "X", 2)]
+                )
+                return httpx.Response(200, json={"results": results})
+            if body["url"].endswith("/gone"):
+                return httpx.Response(404, json={"error": {"message": "no content"}})
+            if body["url"].endswith("/key"):
+                return httpx.Response(401, json={"error": {"message": "bad key"}})
+            return httpx.Response(200, json={"title": "T", "content": "# Page"})
+
+        settings = fg.Settings("sk-test", base_url="https://deepseek.test")
+        client = fg.DeepSeek(settings, transport=httpx.MockTransport(handler))
+
+        async def run() -> None:
+            try:
+                found = await client.search("busy", count=5, question="原问题")
+                assert [r["title"] for r in found] == ["X"]
+                assert await client.search("none") == []
+                assert await client.search("bad") == []
+                assert await client.fetch("https://x.example.com/page") == {
+                    "title": "T",
+                    "content": "# Page",
+                }
+                assert await client.fetch("https://x.example.com/gone") is None
+                with pytest.raises(fg.FocusError) as caught:
+                    await client.fetch("https://x.example.com/key")
+                assert caught.value.code == "focus_llm_auth"
+            finally:
+                await client.aclose()
+
+        _run(run())
+        assert sent[1] == (
+            "/v1/tools/search",
+            {"query": "busy", "count": 5, "need_content": True, "ori_question": "原问题"},
+        )  # retried after the 429
+        assert sent[2][1] == {"query": "none", "count": 8, "need_content": True}
+        assert client.usage.searches == 1 and client.usage.fetches == 1  # only billed calls
+
+
+class TestResearchInSession:
+    def _brief(self, fg: ModuleType, mode: str = "text") -> Any:
+        return dataclasses.replace(_brief(fg, mode), research=_research(fg))
+
+    def _plan(self, fg: ModuleType) -> dict[str, Any]:
+        raw = json.loads(json.dumps(PLAN))
+        raw["participants"][0].update(awareness="high", heard="看了发布会直播。")
+        raw["participants"][1].update(awareness="LOW")
+        return fg.normalize_plan(raw, self._brief(fg), _material(fg))
+
+    def test_plan_prompt_and_awareness(self, fg: ModuleType) -> None:
+        llm = Scripted(fg)
+        _run(_collect(fg.plan_session(llm, self._brief(fg), _material(fg))))
+        prompt = _instruction(llm.requests[0]["messages"])
+        assert "## 联网调研（截至 2026-11-26 的公开信息）" in prompt
+        assert "- （传闻）有爆料称明年推出 Pro 版" in prompt
+        assert "[1]" not in prompt  # no citations for the planner
+        assert '"awareness": "high|medium|low"' in prompt
+        plan = self._plan(fg)
+        people = plan["participants"]
+        assert [(p["awareness"], p["heard"]) for p in people] == [
+            ("high", "看了发布会直播。"),
+            ("low", ""),
+            ("medium", ""),
+        ]
+        plain = _plan(fg)
+        assert "awareness" not in plain["participants"][0]
+        assert "awareness" not in _instruction(
+            Scripted(fg).requests or [{"role": "user", "content": ""}]
+        )
+
+    def test_plan_prompt_without_research_is_unchanged(self, fg: ModuleType) -> None:
+        llm = Scripted(fg)
+        _run(_collect(fg.plan_session(llm, _brief(fg), _material(fg))))
+        prompt = _instruction(llm.requests[0]["messages"])
+        assert "联网调研" not in prompt and "awareness" not in prompt
+        assert "讨论素材：无，只围绕研究问题讨论。\n\n## 招募参与者" in prompt
+
+    def test_discussion_shares_background_and_awareness(self, fg: ModuleType) -> None:
+        llm = Scripted(fg)
+        brief, plan = self._brief(fg), self._plan(fg)
+        _run(_collect(fg.discuss_session(llm, brief, plan, _material(fg))))
+        systems = {r["messages"][0]["content"] for r in llm.requests}
+        assert len(systems) == 1  # one shared system prompt: the prefix cache still works
+        system = systems.pop()
+        assert "## 背景资料" in system and "起售价 7999 元" in system and "[1]" not in system
+        turns = {_speaker(r["messages"]): _instruction(r["messages"]) for r in llm.requests}
+        assert "你对最新信息的了解：你一直在关注" in turns["王丽"]
+        assert "看了发布会直播。" in turns["王丽"]
+        assert "你几乎没关注过" in turns["陈子豪"]
+
+    def test_report_cites_sources(self, fg: ModuleType) -> None:
+        brief, plan = self._brief(fg), self._plan(fg)
+        turns = [
+            d
+            for n, d in _run(_collect(fg.discuss_session(Scripted(fg), brief, plan, _material(fg))))
+            if n == "turn_end"
+        ]
+        raw = json.loads(json.dumps(REPORT))
+        raw["summary"] = "多数人不知道起售价 [1][7]。"
+        raw["findings"][0]["detail"] = "价格认知偏差大 [2, 1]。"
+        raw["findings"][0]["quotes"] = [{"speaker": "p1", "text": "王丽的发言"}]
+        raw["background"] = [
+            {"text": "起售价 7999 元 [1]", "sources": [1, 4]},
+            {"text": "", "sources": [1]},
+        ]
+        llm = Scripted(fg, report=raw)
+        events = _run(_collect(fg.report_session(llm, brief, plan, _material(fg), turns)))
+        prompt = _instruction(llm.requests[0]["messages"])
+        assert "- （已确认）起售价 7999 元 [1]" in prompt
+        assert "来源：\n[1] 发布会回顾 · 示例站" in prompt
+        assert '"background"' in prompt and "看了发布会直播。" in prompt
+        report = events[1][1]["report"]
+        assert report["summary"] == "多数人不知道起售价 [1]。"
+        assert report["findings"][0]["detail"] == "价格认知偏差大 [2][1]。"
+        assert report["background"] == [{"text": "起售价 7999 元", "sources": [1]}]
+        assert report["findings"][0]["quotes"] == [{"speaker": "p1", "text": "王丽的发言"}]
+        plain = fg.normalize_report(raw, _brief(fg), _plan(fg), turns)
+        assert "background" not in plain and plain["summary"] == "多数人不知道起售价 [1][7]。"
 
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
@@ -909,6 +1261,73 @@ class TestEndpoints:
         response = client.post("/api/focus-group/report", data=data)
         assert response.status_code == 400
         assert response.json()["detail"]["code"] == "focus_transcript_empty"
+
+
+class TestResearchEndpoints:
+    def test_info_lists_web_research(self, client: Any, scripted: list[Scripted]) -> None:
+        info = client.get("/api/info").json()
+        assert info["tools"]["web_research"] is True
+        assert info["focus_group"]["max_links"] == 5
+
+    def test_research_streams(self, client: Any, scripted: list[Scripted]) -> None:
+        data = {
+            "topic": "iPhone Duo 用户调研",
+            "lang": "zh",
+            "links": "https://my.example.org/launch",
+        }
+        events = _events(client.post("/api/focus-group/research", data=data))
+        names = [name for name, _ in events]
+        assert names[0] == "status" and names[-3:] == ["research", "usage", "done"]
+        assert names.count("searched") == 3 and names.count("fetched") == 2
+        research = dict(events)["research"]["research"]
+        assert research["sources"][0]["url"] == "https://my.example.org/launch"
+        assert events[-2][1]["searches"] == 2
+        assert scripted[0].closed
+
+    @pytest.mark.parametrize(
+        ("links", "code"),
+        [
+            ("ftp://x.example.com", "focus_link_invalid"),
+            ("\n".join(f"https://x.example.com/{i}" for i in range(6)), "focus_links_too_many"),
+        ],
+    )
+    def test_research_checks_links_first(
+        self, client: Any, scripted: list[Scripted], links: str, code: str
+    ) -> None:
+        response = client.post("/api/focus-group/research", data=_form(links=links))
+        assert response.status_code == 400
+        assert response.json()["detail"]["code"] == code
+        assert scripted == []
+
+    def test_plan_discuss_and_report_take_the_research(
+        self, client: Any, scripted: list[Scripted], fg: ModuleType
+    ) -> None:
+        research = json.dumps(_research(fg), ensure_ascii=False)
+        events = _events(
+            client.post("/api/focus-group/plan", data=_form(participants="3", research=research))
+        )
+        plan = dict(events)["plan"]["plan"]
+        assert all(p["awareness"] == "medium" for p in plan["participants"])
+        assert "联网调研" in _instruction(scripted[0].requests[0]["messages"])
+
+        form = _form(plan=json.dumps(plan, ensure_ascii=False), research=research)
+        _events(client.post("/api/focus-group/discuss", data=form))
+        assert "## 背景资料" in scripted[1].requests[0]["messages"][0]["content"]
+
+        turns = [_turn("q1.ask", "moderator", "大家好"), _turn("q1.p1", "p1", "王丽的发言")]
+        form["transcript"] = json.dumps(turns, ensure_ascii=False)
+        events = _events(client.post("/api/focus-group/report", data=form))
+        assert "来源：" in _instruction(scripted[2].requests[0]["messages"])
+        assert "background" in dict(events)["report"]["report"]
+
+    @pytest.mark.parametrize("research", ["{", '{"sources": [{"n": 1, "url": "file:///etc"}]}'])
+    def test_broken_research_is_refused(
+        self, client: Any, scripted: list[Scripted], research: str
+    ) -> None:
+        response = client.post("/api/focus-group/plan", data=_form(research=research))
+        assert response.status_code == 400
+        assert response.json()["detail"]["code"] == "focus_invalid_research"
+        assert scripted == []
 
 
 class TestSamples:

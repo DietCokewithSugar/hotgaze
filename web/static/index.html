@@ -469,6 +469,20 @@
               <span data-i18n="focus.context">补充背景（可选）</span>
               <textarea class="prose" name="context" rows="3" maxlength="3000" data-i18n-attr="placeholder:focus.context_placeholder" placeholder="产品或概念是什么、你已经知道什么、最想弄清楚什么……"></textarea>
             </label>
+            <div class="web-box" data-web>
+              <label class="web-toggle">
+                <input type="checkbox" role="switch" data-web-toggle>
+                <span class="web-toggle-text">
+                  <span class="web-toggle-title"><svg class="icon" aria-hidden="true"><use href="#i-globe"/></svg><span data-i18n="focus.web">联网调研</span></span>
+                  <small data-i18n="focus.web_help">讨论前先在网上查最新的公开信息（发布、价格、口碑……），整理成带来源的背景资料。参与者按各自的了解程度使用，报告会标注来源。</small>
+                </span>
+              </label>
+              <label class="field" data-links-field hidden>
+                <span data-i18n="focus.links">参考链接（可选）</span>
+                <textarea class="prose links-input" name="links" rows="2" spellcheck="false" data-i18n-attr="placeholder:focus.links_placeholder" placeholder="每行一个，最多 5 个，例如发布会页面、评测文章"></textarea>
+              </label>
+              <ul class="research-log" data-research-log hidden></ul>
+            </div>
             <div class="field">
               <span class="field-label" id="focus-mode-label" data-i18n="focus.material">讨论素材</span>
               <div class="segmented segmented-modes" role="tablist" aria-labelledby="focus-mode-label">
@@ -484,6 +498,7 @@
               <button type="button" class="sample-chip sample-chip-icon" data-sample><span class="chip-mark" aria-hidden="true"><svg class="icon"><use href="#i-chat"/></svg></span><span data-i18n="focus.sample">看一场示例讨论：投资理财用户的痛点</span></button>
             </div>
           </div>
+          <div class="research" data-research hidden></div>
           <div class="plan" data-plan hidden></div>
           <div class="session" data-session hidden>
             <div class="session-head">
@@ -502,6 +517,7 @@
         <h2 class="visually-hidden" id="focus-panel-title" data-i18n="tool.panel">设置与导出</h2>
         <div class="panel-section">
           <ol class="steps" aria-label="进度" data-i18n-attr="aria-label:focus.steps_label">
+            <li data-step="research" hidden><span class="step-dot num" aria-hidden="true">1</span><span data-i18n="focus.step_research">调研</span></li>
             <li data-step="recruit"><span class="step-dot num" aria-hidden="true">1</span><span data-i18n="focus.step_recruit">招募</span></li>
             <li data-step="discuss"><span class="step-dot num" aria-hidden="true">2</span><span data-i18n="focus.step_discuss">讨论</span></li>
             <li data-step="report"><span class="step-dot num" aria-hidden="true">3</span><span data-i18n="focus.step_report">报告</span></li>
@@ -521,6 +537,7 @@
         <div class="panel-notes">
           <p class="fineprint" data-i18n="focus.note_ai">参与者由 AI 扮演，不是真实用户。结果适合用来梳理假设、准备访谈，重要决定请找真实用户验证。</p>
           <p class="fineprint" data-i18n="focus.note_data">讨论由 DeepSeek 生成：你填写的内容和上传的截图会发送到 DeepSeek 的服务器处理，本站不保存。请不要填写敏感信息。</p>
+          <p class="fineprint" data-i18n="focus.note_web">联网调研使用 DeepSeek 的搜索和网页抓取接口，研究问题和参考链接会发给 DeepSeek；网上的信息可能有错，请核对来源。</p>
         </div>
       </aside>
     </div>

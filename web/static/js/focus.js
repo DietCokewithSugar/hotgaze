@@ -1,6 +1,7 @@
-// AI focus group: brief → recruit → review and edit the plan → discussion, streamed
-// turn by turn → structured report. The plan, transcript and report live here in the
-// browser; each step sends them back to the server, which keeps nothing.
+// AI focus group: brief → (optional) web research, reviewed and edited → recruit →
+// review and edit the plan → discussion, streamed turn by turn → structured report.
+// The research, plan, transcript and report live here in the browser; each step sends
+// them back to the server, which keeps nothing.
 
 import { lang, onLangChange, t, tFor } from "./i18n.js";
 import {
@@ -22,9 +23,13 @@ import {
 } from "./core.js";
 
 const SAMPLE_URL = (language) => `/static/samples/focus-group-wealth.${language}.json`;
-const FALLBACK = { participants: [3, 6], max_images: 20, max_images_ab: 10, plan_edge: 2048, talk_edge: 1280 };
+const FALLBACK = { participants: [3, 6], max_images: 20, max_images_ab: 10, plan_edge: 2048, talk_edge: 1280, max_links: 5 };
 const STANCES = ["supportive", "neutral", "skeptical"];
+const AWARENESS = ["high", "medium", "low"];
+const FACT_KINDS = ["fact", "rumor", "voice"];
 const MAX_QUESTIONS = 6;
+const MAX_FACTS = 12;
+const WEB_PREF = "focal.focus.web";
 // A screenshot this small that is already JPEG or PNG is sent as it is.
 const PASS_BYTES = 600 * 1024;
 
@@ -33,6 +38,7 @@ let els;
 let status;
 let limits = FALLBACK;
 let available = true;
+let webAvailable = true;
 let nextShotId = 1;
 let follow = null;
 const sampleCache = new Map();
@@ -42,8 +48,13 @@ const state = {
   shots: { a: [], b: [] }, // {id, file, url, name, prepared: Map(edge -> File)}
   count: 5,
   regions: [], // from the heatmap page
-  phase: "brief", // brief | recruiting | plan | discussing | stopped | reporting | done
-  session: null, // the brief as recruited: {lang, topic, context, audience, mode, participants}
+  phase: "brief", // brief | researching | research | recruiting | plan | discussing | stopped | reporting | done
+  session: null, // the brief as recruited: {lang, topic, context, audience, mode, participants, researched}
+  web: readWebPref(), // the web research switch
+  research: null, // {date, queries, summary, facts, gaps, sources}, as edited
+  researchKey: "", // the brief the research was done for
+  researchLog: null, // {queries: [{query, count}]} while researching
+  researchUsage: null, // what the research cost, carried into the session
   planKey: "",
   plan: null,
   attention: null, // {overlay, summary}
@@ -56,7 +67,7 @@ const state = {
   models: new Set(),
   active: 0, // seconds spent discussing and reporting
   since: 0, // performance.now() when the current stretch began
-  editing: null, // {kind: "person" | "question", id}
+  editing: null, // {kind: "person" | "question" | "fact" | "summary", id}
   sample: null, // {generator, topic} while showing the sample session
   abort: null,
   error: null,
@@ -72,6 +83,11 @@ export function init(section) {
     topic: $("textarea[name=topic]", root),
     audience: $("input[name=audience]", root),
     context: $("textarea[name=context]", root),
+    webToggle: $("[data-web-toggle]", root),
+    linksField: $("[data-links-field]", root),
+    links: $("textarea[name=links]", root),
+    researchLog: $("[data-research-log]", root),
+    research: $("[data-research]", root),
     modeHelp: $("[data-mode-help]", root),
     trays: $("[data-trays]", root),
     plan: $("[data-plan]", root),
@@ -91,9 +107,24 @@ export function init(section) {
   };
   status = statusLine($("[data-status]", root), els.pill);
 
-  for (const field of [els.topic, els.audience, els.context]) field.addEventListener("input", renderPanel);
+  for (const field of [els.topic, els.audience, els.context, els.links]) field.addEventListener("input", onBriefInput);
   els.topic.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && (event.ctrlKey || event.metaKey) && ready()) recruit();
+    if (event.key !== "Enter" || !(event.ctrlKey || event.metaKey)) return;
+    if (needsResearch()) research();
+    else if (ready()) recruit();
+  });
+  els.webToggle.addEventListener("change", () => {
+    state.web = els.webToggle.checked;
+    try {
+      localStorage.setItem(WEB_PREF, state.web ? "1" : "0");
+    } catch {
+      // private mode: the switch just isn't remembered
+    }
+    renderBrief();
+    renderSteps();
+    renderPanel();
+    renderStatus();
+    if (state.web) requestAnimationFrame(() => els.links.scrollIntoView({ block: "nearest" }));
   });
 
   const tabs = $$("[data-mode]", root);
@@ -124,7 +155,7 @@ export function init(section) {
   });
 
   window.addEventListener("beforeunload", (event) => {
-    if (["recruiting", "discussing", "reporting"].includes(state.phase)) {
+    if (busy()) {
       event.preventDefault();
       event.returnValue = "";
     }
@@ -133,6 +164,8 @@ export function init(section) {
   serverInfo().then((info) => {
     limits = { ...FALLBACK, ...(info.focus_group || {}) };
     available = info.tools?.focus_group !== false;
+    webAvailable = available && info.tools?.web_research !== false;
+    if (!webAvailable) state.web = false;
     for (const [field, key] of [
       [els.topic, "topic_max"],
       [els.context, "context_max"],
@@ -150,6 +183,7 @@ export function init(section) {
         ),
       );
     }
+    renderBrief();
     renderPanel();
   });
 
@@ -239,7 +273,7 @@ export function turnNode(turn, plan, { attention = null, total = plan.guide.leng
 // ── Phases ────────────────────────────────────────────────────────────────────
 
 function busy() {
-  return ["recruiting", "discussing", "reporting"].includes(state.phase);
+  return ["researching", "recruiting", "discussing", "reporting"].includes(state.phase);
 }
 
 function setPhase(phase) {
@@ -266,10 +300,27 @@ function reset() {
     editing: null,
     sample: null,
     abort: null,
+    research: null,
+    researchKey: "",
+    researchLog: null,
+    researchUsage: null,
   });
   clearError();
   els.transcript.replaceChildren();
   renderAll();
+}
+
+function readWebPref() {
+  try {
+    return localStorage.getItem(WEB_PREF) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function onBriefInput() {
+  renderPanel();
+  renderStatus();
 }
 
 function ready() {
@@ -277,6 +328,32 @@ function ready() {
   if (state.mode === "flow" || state.mode === "heatmap") return state.shots.a.length > 0;
   if (state.mode === "ab") return state.shots.a.length > 0 && state.shots.b.length > 0;
   return true;
+}
+
+/** The reference links as typed: one per line (any whitespace separates them). */
+function linkList() {
+  return els.links.value
+    .split(/\s+/)
+    .map((link) => link.trim())
+    .filter(Boolean);
+}
+
+/** What the research depends on; when the brief changes, the research is stale. */
+function researchKeyNow() {
+  return JSON.stringify([lang(), els.topic.value.trim(), els.context.value.trim(), els.audience.value.trim(), linkList()]);
+}
+
+function researchValid() {
+  return Boolean(state.research) && state.researchKey === researchKeyNow();
+}
+
+/** The switch is on and the research for this brief hasn't been done yet. */
+function needsResearch() {
+  return state.web && webAvailable && !researchValid();
+}
+
+function researchReady() {
+  return available && webAvailable && !busy() && Boolean(els.topic.value.trim());
 }
 
 function materialKey() {
@@ -367,7 +444,11 @@ function renderBrief() {
   els.modeHelp.dataset.i18n = `focus.mode_${state.mode}_help`;
   els.modeHelp.textContent = t(els.modeHelp.dataset.i18n);
   const disabled = state.phase !== "brief";
-  for (const field of [els.topic, els.audience, els.context]) field.disabled = disabled;
+  for (const field of [els.topic, els.audience, els.context, els.links]) field.disabled = disabled;
+  els.webToggle.checked = state.web;
+  els.webToggle.disabled = disabled || !webAvailable;
+  els.linksField.hidden = !state.web;
+  renderResearchLog();
 
   if (state.mode === "text") {
     els.trays.hidden = true;
@@ -501,13 +582,367 @@ function toolButton(name, label, onclick, { disabled = false, move = null } = {}
   );
 }
 
+// ── Web research ──────────────────────────────────────────────────────────────
+
+async function research() {
+  if (!researchReady()) {
+    if (!els.topic.value.trim()) els.topic.focus();
+    return;
+  }
+  const max = limits.max_links || FALLBACK.max_links;
+  if (linkList().length > max) {
+    fail(new ApiError("focus_links_too_many", { max }));
+    return;
+  }
+  const key = researchKeyNow();
+  const brief = { lang: lang(), topic: els.topic.value.trim(), context: els.context.value.trim(), audience: els.audience.value.trim(), mode: "text" };
+  Object.assign(state, { researchLog: { queries: [] }, editing: null, usage: emptyUsage(), models: new Set() });
+  clearError();
+  setPhase("researching");
+  const started = performance.now();
+  const working = (phase, params = {}) =>
+    status.working(`status.focus_research_${phase}`, { params, since: started, hintKey: "status.focus_research_hint", slowAfter: 150, slowKey: "status.focus_slow" });
+  working("queries");
+
+  const controller = new AbortController();
+  state.abort = controller;
+  let result = null;
+  try {
+    const body = briefForm(brief);
+    body.append("links", linkList().join("\n"));
+    await request("/api/focus-group/research", body, controller, (name, data) => {
+      if (name === "status") working(data.phase, data);
+      else if (name === "queries") {
+        state.researchLog.queries = data.queries.map((query) => ({ query, count: null }));
+        renderResearchLog();
+      } else if (name === "searched") {
+        const item = state.researchLog.queries.find((entry) => entry.query === data.query);
+        if (item) item.count = data.count;
+        renderResearchLog();
+      } else if (name === "research") result = data.research;
+    });
+    if (!result) throw new ApiError("focus_bad_output");
+    Object.assign(state, { research: result, researchKey: key, researchUsage: { ...state.usage }, researchLog: null });
+    setPhase("research");
+    status.done("focus.researched", { sources: result.sources.length, facts: result.facts.length });
+    focusSheet();
+  } catch (error) {
+    if (error.name === "AbortError") {
+      if (state.phase === "researching") setPhase("brief");
+      return;
+    }
+    setPhase("brief");
+    fail(error, research);
+  } finally {
+    if (state.abort === controller) state.abort = null;
+  }
+}
+
+function renderResearchLog() {
+  const log = state.researchLog;
+  const show = Boolean(log?.queries.length) && (state.phase === "researching" || state.phase === "brief") && state.web;
+  els.researchLog.hidden = !show;
+  if (!show) {
+    els.researchLog.replaceChildren();
+    return;
+  }
+  els.researchLog.replaceChildren(
+    ...log.queries.map((entry) =>
+      h(
+        "li",
+        { class: entry.count === 0 ? "is-empty" : "", title: entry.query },
+        h("span", { text: entry.query }),
+        entry.count === null ? h("span", { class: "spinner spinner-xs", "aria-hidden": "true" }) : h("span", { class: "num", text: String(entry.count) }),
+      ),
+    ),
+  );
+}
+
+/** Points and sources as the researcher left them; sources renumbered 1, 2, … after a removal. */
+function removeSource(n) {
+  const research = state.research;
+  const kept = research.sources.filter((source) => source.n !== n);
+  const map = new Map(kept.map((source, index) => [source.n, index + 1]));
+  kept.forEach((source) => (source.n = map.get(source.n)));
+  research.sources = kept;
+  for (const fact of research.facts) fact.sources = fact.sources.filter((m) => map.has(m)).map((m) => map.get(m));
+  renderResearch();
+  toast(t(kept.length ? "focus.source_removed" : "focus.no_sources"));
+  const next = $(`[data-source="${Math.min(n, kept.length)}"] .icon-btn`, els.research);
+  (next || $(".research-head h2", els.research))?.focus?.();
+}
+
+function addFact() {
+  const facts = state.research.facts;
+  if (facts.length >= MAX_FACTS) {
+    toast(t("focus.max_facts", { max: MAX_FACTS }));
+    return;
+  }
+  const fact = { id: `f${facts.length + 1}`, text: "", kind: "fact", sources: [] };
+  facts.push(fact);
+  state.editing = { kind: "fact", id: fact.id };
+  renderResearch();
+}
+
+function removeFact(id) {
+  const facts = state.research.facts;
+  const index = facts.findIndex((fact) => fact.id === id);
+  if (index < 0) return;
+  facts.splice(index, 1);
+  facts.forEach((fact, i) => (fact.id = `f${i + 1}`));
+  state.editing = null;
+  renderResearch();
+}
+
+function renderResearch() {
+  const research = state.research;
+  if (!research) {
+    els.research.replaceChildren();
+    return;
+  }
+  const locked = state.phase !== "research";
+  const head = h(
+    "div",
+    { class: "research-head" },
+    h("h2", { tabindex: "-1" }, icon("globe"), h("span", { text: t("focus.research_title") })),
+    h("p", { class: "meta num", text: t("focus.research_meta", { date: research.date, queries: research.queries.length, sources: research.sources.length }) }),
+    locked ? null : h("p", { class: "help", text: t("focus.research_hint") }),
+  );
+  const facts = research.facts;
+  const factList = h("ul", { class: "facts" }, facts.map((fact) => factRow(fact, locked)));
+  const sections = [
+    head,
+    summaryBlock(research, locked),
+    h(
+      "section",
+      { class: "plan-section" },
+      h(
+        "div",
+        { class: "section-head" },
+        h("h3", {}, t("focus.facts"), " ", h("span", { class: "count num", text: facts.length })),
+        locked
+          ? null
+          : h("button", { type: "button", class: "btn btn-sm btn-quiet", disabled: facts.length >= MAX_FACTS, onclick: addFact }, icon("plus"), h("span", { text: t("focus.add_fact") })),
+      ),
+      factList,
+    ),
+  ];
+  if (research.sources.length) {
+    sections.push(
+      h(
+        "section",
+        { class: "plan-section" },
+        h("div", { class: "section-head" }, h("h3", {}, t("focus.sources"), " ", h("span", { class: "count num", text: research.sources.length }))),
+        sourceList(research.sources, { removable: !locked }),
+      ),
+    );
+  }
+  if (research.queries.length) {
+    sections.push(
+      h(
+        "details",
+        { class: "queries" },
+        h("summary", { text: t("focus.queries") }),
+        h("ul", {}, research.queries.map((query) => h("li", { text: query }))),
+      ),
+    );
+  }
+  els.research.replaceChildren(...sections);
+}
+
+function summaryBlock(research, locked) {
+  if (!locked && state.editing?.kind === "summary") {
+    const summary = h("textarea", { class: "prose", rows: "4", maxlength: "600" });
+    summary.value = research.summary || "";
+    const gaps = h("textarea", { class: "prose", rows: "2", maxlength: "300" });
+    gaps.value = research.gaps || "";
+    const save = () => {
+      research.summary = summary.value.trim();
+      research.gaps = gaps.value.trim();
+      state.editing = null;
+      renderResearch();
+      $(".research-summary .icon-btn", els.research)?.focus();
+    };
+    const box = h(
+      "div",
+      { class: "fact is-editing" },
+      h(
+        "div",
+        { class: "editor-grid" },
+        labelled(t("focus.field_research_summary"), summary, "wide"),
+        labelled(t("focus.field_gaps"), gaps, "wide"),
+        h("div", { class: "editor-actions" }, h("button", { type: "button", class: "btn btn-sm", onclick: save, text: t("focus.done_edit") })),
+      ),
+    );
+    box.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        state.editing = null;
+        renderResearch();
+      } else if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) save();
+    });
+    requestAnimationFrame(() => summary.focus());
+    return box;
+  }
+  return h(
+    "div",
+    { class: "research-summary" },
+    h(
+      "div",
+      {},
+      h("p", { text: research.summary || "—" }),
+      research.gaps ? h("p", { class: "research-gaps", text: t("focus.research_gaps", { gaps: research.gaps }) }) : null,
+    ),
+    locked ? null : h("div", { class: "row-tools" }, toolButton("pencil", t("focus.edit_summary"), () => editResearch("summary", "summary"))),
+  );
+}
+
+function factRow(fact, locked) {
+  if (!locked && state.editing?.kind === "fact" && state.editing.id === fact.id) return factEditor(fact);
+  return h(
+    "li",
+    { class: "fact", "data-fact": fact.id },
+    h("p", { class: "fact-text" }, kindTag(fact.kind), fact.text, fact.sources.length ? " " : null, citeChips(fact.sources)),
+    locked
+      ? null
+      : h(
+          "div",
+          { class: "row-tools" },
+          toolButton("pencil", t("focus.edit_fact"), () => editResearch("fact", fact.id)),
+          toolButton("trash", t("focus.remove_fact"), () => removeFact(fact.id)),
+        ),
+  );
+}
+
+function factEditor(fact) {
+  const text = h("textarea", { class: "prose", rows: "3", maxlength: "300" });
+  text.value = fact.text;
+  const kind = h(
+    "select",
+    {},
+    FACT_KINDS.map((value) => h("option", { value, selected: value === fact.kind, text: t(`focus.kind.${value}`) })),
+  );
+  const save = () => {
+    const value = text.value.trim();
+    if (!value) {
+      removeFact(fact.id);
+      return;
+    }
+    fact.text = value;
+    fact.kind = kind.value;
+    state.editing = null;
+    renderResearch();
+    $(`[data-fact="${fact.id}"] .icon-btn`, els.research)?.focus();
+  };
+  const row = h(
+    "li",
+    { class: "fact is-editing", "data-fact": fact.id },
+    h(
+      "div",
+      { class: "editor-grid" },
+      labelled(t("focus.field_fact"), text, "wide"),
+      labelled(t("focus.field_kind"), kind),
+      h("div", { class: "editor-actions" }, h("button", { type: "button", class: "btn btn-sm", onclick: save, text: t("focus.done_edit") })),
+    ),
+  );
+  row.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      if (!fact.text) removeFact(fact.id);
+      else {
+        state.editing = null;
+        renderResearch();
+      }
+    } else if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) save();
+  });
+  requestAnimationFrame(() => text.focus());
+  return row;
+}
+
+function editResearch(kind, id) {
+  state.editing = { kind, id };
+  renderResearch();
+}
+
+function kindTag(kind) {
+  return h("span", { class: `tag tag-kind-${kind}`, text: t(`focus.kind.${kind}`) });
+}
+
+function sourceList(sources, { removable = false, ids = false } = {}) {
+  return h(
+    "ol",
+    { class: "sources" },
+    sources.map((source) =>
+      h(
+        "li",
+        { class: "source", "data-source": source.n, id: ids ? `focus-src-${source.n}` : null },
+        h("span", { class: "source-n num", text: source.n }),
+        h(
+          "div",
+          {},
+          h("p", { class: "source-title" }, h("a", { href: source.url, target: "_blank", rel: "noopener noreferrer", text: source.title || source.url })),
+          h("p", { class: "meta", text: [source.site, source.date, source.linked ? t("focus.source_linked") : ""].filter(Boolean).join(" · ") }),
+          removable && source.snippet ? h("p", { class: "meta", text: source.snippet }) : null,
+        ),
+        removable ? h("div", { class: "row-tools" }, toolButton("trash", t("focus.remove_source", { n: source.n }), () => removeSource(source.n))) : null,
+      ),
+    ),
+  );
+}
+
+/** [n] markers in report text become links to the source list; other text stays text. */
+function cited(text) {
+  if (!text) return [];
+  const known = new Set((state.research?.sources || []).map((source) => source.n));
+  return String(text)
+    .split(/(\[\d{1,2}\])/)
+    .filter(Boolean)
+    .map((part) => {
+      const match = /^\[(\d{1,2})\]$/.exec(part);
+      return match && known.has(Number(match[1])) ? citeChip(Number(match[1])) : part;
+    });
+}
+
+function citeChips(numbers) {
+  return (numbers || []).map((n) => citeChip(n));
+}
+
+function citeChip(n) {
+  const source = state.research?.sources.find((item) => item.n === n);
+  const label = t("focus.cite_label", { n, title: source?.title || "" });
+  return h("button", {
+    type: "button",
+    class: "cite num",
+    title: label,
+    "aria-label": label,
+    text: String(n),
+    onclick: (event) => {
+      const scope = event.currentTarget.closest(".report, .research") || root;
+      const target = $(`[data-source="${n}"]`, scope);
+      if (!target) return;
+      target.classList.remove("is-target");
+      void target.offsetWidth; // restart the highlight
+      target.classList.add("is-target");
+      target.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+      $("a", target)?.focus({ preventScroll: true });
+    },
+  });
+}
+
+function appendResearch(body) {
+  if (state.session?.researched && state.research) body.append("research", JSON.stringify(state.research));
+}
+
 // ── Recruit ───────────────────────────────────────────────────────────────────
 
 async function recruit() {
+  if (needsResearch()) {
+    research();
+    return;
+  }
   if (!ready()) {
     if (!els.topic.value.trim()) els.topic.focus();
     return;
   }
+  const researched = state.web && webAvailable && researchValid();
   const session = {
     lang: lang(),
     topic: els.topic.value.trim(),
@@ -515,6 +950,7 @@ async function recruit() {
     audience: els.audience.value.trim(),
     mode: state.mode,
     participants: state.count,
+    researched,
   };
   Object.assign(state, {
     session,
@@ -524,7 +960,7 @@ async function recruit() {
     turns: [],
     report: null,
     reportFailed: false,
-    usage: emptyUsage(),
+    usage: researched && state.researchUsage ? { ...emptyUsage(), ...state.researchUsage } : emptyUsage(),
     models: new Set(),
     active: 0,
     editing: null,
@@ -540,6 +976,7 @@ async function recruit() {
   try {
     const body = briefForm(session);
     body.append("participants", String(session.participants));
+    appendResearch(body);
     await appendShots(body, session.mode, limits.plan_edge, 0.9);
     if (session.mode === "heatmap") for (const region of state.regions) body.append("region", region);
     await request("/api/focus-group/plan", body, controller, (name, data) => {
@@ -553,11 +990,12 @@ async function recruit() {
     status.done("focus.planned", { count: state.plan.participants.length, questions: state.plan.guide.length });
     focusSheet();
   } catch (error) {
+    const back = researched ? "research" : "brief";
     if (error.name === "AbortError") {
-      if (state.phase === "recruiting") setPhase("brief");
+      if (state.phase === "recruiting") setPhase(back);
       return;
     }
-    setPhase("brief");
+    setPhase(back);
     fail(error, recruit);
   } finally {
     if (state.abort === controller) state.abort = null;
@@ -650,6 +1088,7 @@ function renderPlan() {
       h("h2", { class: "plan-title", text: plan.title || state.session?.topic || "" }),
       plan.objective ? h("p", { class: "plan-objective", text: plan.objective }) : null,
     ),
+    planResearch(),
     h(
       "section",
       { class: "plan-section" },
@@ -684,6 +1123,31 @@ function renderPlan() {
   els.plan.replaceChildren(...sections);
 }
 
+function planResearch() {
+  const research = state.session?.researched ? state.research : null;
+  if (!research) return null;
+  return h(
+    "section",
+    { class: "plan-section" },
+    h(
+      "div",
+      { class: "section-head" },
+      h("h3", { text: t("focus.plan_research") }),
+      h("button", { type: "button", class: "btn btn-sm btn-quiet", onclick: () => setPhase("research") }, icon("globe"), h("span", { text: t("focus.view_research") })),
+    ),
+    h(
+      "div",
+      {},
+      h("p", { class: "plan-objective", text: research.summary || "" }),
+      h("p", { class: "meta num", text: t("focus.plan_research_meta", { facts: research.facts.length, sources: research.sources.length, date: research.date }) }),
+    ),
+  );
+}
+
+function awarenessTag(level) {
+  return AWARENESS.includes(level) ? h("span", { class: `tag tag-aware-${level}`, text: t(`focus.aware.${level}`) }) : null;
+}
+
 function personRow(person) {
   const editing = state.editing?.kind === "person" && state.editing.id === person.id;
   if (editing) return personEditor(person);
@@ -700,8 +1164,10 @@ function personRow(person) {
         h("b", { text: person.name }),
         person.summary ? h("span", { class: "person-summary", text: person.summary }) : null,
         stanceTag(person.stance),
+        awarenessTag(person.awareness),
       ),
       person.profile ? h("p", { class: "person-profile", text: person.profile }) : null,
+      person.heard ? h("p", { class: "person-heard", text: t("focus.heard", { heard: person.heard }) }) : null,
       person.voice ? h("p", { class: "meta", text: t("focus.voice", { voice: person.voice }) }) : null,
     ),
     h(
@@ -725,6 +1191,15 @@ function personEditor(person) {
     profile: h("textarea", { class: "prose", rows: "4", maxlength: "700", text: person.profile || "" }),
     voice: h("input", { class: "input", type: "text", value: person.voice || "", maxlength: "140", autocomplete: "off" }),
   };
+  const aware = AWARENESS.includes(person.awareness);
+  if (aware) {
+    fields.awareness = h(
+      "select",
+      {},
+      AWARENESS.map((level) => h("option", { value: level, selected: level === person.awareness, text: t(`focus.aware.${level}`) })),
+    );
+    fields.heard = h("input", { class: "input", type: "text", value: person.heard || "", maxlength: "160", autocomplete: "off" });
+  }
   fields.profile.value = person.profile || "";
   const save = () => {
     const name = fields.name.value.trim();
@@ -733,6 +1208,10 @@ function personEditor(person) {
     person.stance = fields.stance.value;
     person.profile = fields.profile.value.trim();
     person.voice = fields.voice.value.trim();
+    if (aware) {
+      person.awareness = fields.awareness.value;
+      person.heard = fields.heard.value.trim();
+    }
     state.editing = null;
     renderPlan();
     $(`[data-person="${person.id}"] .icon-btn`, els.plan)?.focus();
@@ -749,6 +1228,8 @@ function personEditor(person) {
       labelled(t("focus.field_summary"), fields.summary, "wide"),
       labelled(t("focus.field_profile"), fields.profile, "wide"),
       labelled(t("focus.field_voice"), fields.voice, "wide"),
+      aware ? labelled(t("focus.field_awareness"), fields.awareness) : null,
+      aware ? labelled(t("focus.field_heard"), fields.heard, "wide") : null,
       h("div", { class: "editor-actions" }, h("button", { type: "button", class: "btn btn-sm", onclick: save, text: t("focus.done_edit") })),
     ),
   );
@@ -1029,6 +1510,7 @@ async function discuss() {
     const body = briefForm(state.session);
     body.append("plan", JSON.stringify(state.plan));
     body.append("transcript", JSON.stringify(state.turns));
+    appendResearch(body);
     await appendShots(body, state.session.mode, limits.talk_edge, 0.82);
     if (state.session.mode === "heatmap" && state.attention?.overlay) body.append("overlay", dataUrlFile(state.attention.overlay, "overlay.jpg"));
     await request("/api/focus-group/discuss", body, controller, (name, data) => {
@@ -1167,6 +1649,7 @@ async function writeReport() {
     const body = briefForm(state.session);
     body.append("plan", JSON.stringify(state.plan));
     body.append("transcript", JSON.stringify(state.turns));
+    appendResearch(body);
     let report = null;
     await request("/api/focus-group/report", body, controller, (name, data) => {
       if (name === "report") report = data.report;
@@ -1218,7 +1701,7 @@ function renderReport() {
       "div",
       { class: "report-lead" },
       report.headline ? h("p", { class: "report-headline", text: report.headline }) : null,
-      report.summary ? h("p", { class: "report-summary", text: report.summary }) : null,
+      report.summary ? h("p", { class: "report-summary" }, cited(report.summary)) : null,
     ),
   ];
   if (report.findings?.length) {
@@ -1237,7 +1720,7 @@ function renderReport() {
                 "div",
                 { class: "finding-body" },
                 h("h4", {}, finding.title, " ", h("span", { class: "tag", text: t(`focus.evidence.${finding.evidence}`) })),
-                finding.detail ? h("p", { text: finding.detail }) : null,
+                finding.detail ? h("p", {}, cited(finding.detail)) : null,
                 finding.quotes?.length
                   ? h(
                       "ul",
@@ -1256,6 +1739,18 @@ function renderReport() {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+  if (report.background?.length) {
+    blocks.push(
+      reportSection(
+        t("focus.background"),
+        h(
+          "ol",
+          { class: "background-list" },
+          report.background.map((item) => h("li", {}, cited(item.text), item.sources?.length ? " " : null, citeChips(item.sources))),
         ),
       ),
     );
@@ -1313,7 +1808,7 @@ function renderReport() {
               h(
                 "ul",
                 { class: "sides" },
-                item.sides.map((side) => h("li", {}, faces(side.participants, people), h("p", { text: side.view }))),
+                item.sides.map((side) => h("li", {}, faces(side.participants, people), h("p", {}, cited(side.view)))),
               ),
             ),
           ),
@@ -1333,7 +1828,7 @@ function renderReport() {
               "li",
               {},
               h("p", { class: "point-title" }, item.title, " ", h("span", { class: `tag tag-priority-${item.priority}`, text: t(`focus.priority.${item.priority}`) })),
-              item.detail ? h("p", { text: item.detail }) : null,
+              item.detail ? h("p", {}, cited(item.detail)) : null,
               item.related?.length ? h("p", { class: "meta", text: t("focus.related", { list: item.related.join(t("focus.list_sep")) }) }) : null,
             ),
           ),
@@ -1350,9 +1845,12 @@ function renderReport() {
         "div",
         { class: "alert alert-info report-limits", role: "note" },
         icon("info"),
-        h("div", { class: "alert-body" }, h("p", {}, h("b", { text: t("focus.limitations") + colon() }), report.limitations)),
+        h("div", { class: "alert-body" }, h("p", {}, h("b", { text: t("focus.limitations") + colon() }), cited(report.limitations))),
       ),
     );
+  }
+  if (state.session?.researched && state.research?.sources.length) {
+    blocks.push(reportSection(t("focus.sources"), sourceList(state.research.sources, { ids: true })));
   }
   if (state.usage.calls) {
     blocks.push(
@@ -1363,7 +1861,7 @@ function renderReport() {
           input: tokens(state.usage.prompt_tokens),
           hit: percent(state.usage.cache_hit_tokens, state.usage.prompt_tokens),
           output: tokens(state.usage.completion_tokens),
-        }),
+        }) + (state.usage.searches || state.usage.fetches ? t("focus.usage_web", { searches: state.usage.searches || 0, fetches: state.usage.fetches || 0 }) : ""),
       }),
     );
   }
@@ -1385,7 +1883,7 @@ function pointList(title, points, people) {
           "li",
           {},
           h("p", { class: "point-title", text: point.title }),
-          point.detail ? h("p", { text: point.detail }) : null,
+          point.detail ? h("p", {}, cited(point.detail)) : null,
           whoLine(point.participants, people),
         ),
       ),
@@ -1464,7 +1962,7 @@ function abSection(ab, people) {
         list(t("focus.ab_issues", { version: t("focus.version_a") }), ab.a_issues),
         list(t("focus.ab_issues", { version: t("focus.version_b") }), ab.b_issues),
       ),
-      ab.verdict ? h("p", { class: "ab-verdict" }, h("b", { text: t("focus.ab_verdict") + colon() }), ab.verdict) : null,
+      ab.verdict ? h("p", { class: "ab-verdict" }, h("b", { text: t("focus.ab_verdict") + colon() }), cited(ab.verdict)) : null,
     ),
   );
 }
@@ -1499,9 +1997,10 @@ function faces(ids, people) {
 function showSession(data) {
   reset();
   Object.assign(state, {
-    session: { lang: data.lang, ...data.brief },
+    session: { lang: data.lang, ...data.brief, researched: Boolean(data.research) },
     plan: data.plan,
     attention: data.attention || null,
+    research: data.research || null,
     turns: data.transcript || [],
     report: data.report || null,
     usage: { ...emptyUsage(), ...(data.usage || {}) },
@@ -1542,6 +2041,7 @@ function exportData() {
     },
     plan: state.plan,
     attention: state.attention,
+    research: state.session.researched ? state.research : null,
     transcript: state.turns,
     report: state.report,
     usage: state.usage,
@@ -1589,6 +2089,8 @@ function markdown() {
   const out = [];
   const add = (...lines) => out.push(...lines);
   const cell = (text) => String(text ?? "").replace(/\|/g, "\\|").replace(/\n/g, " ");
+  const marks = (numbers) => (numbers?.length ? (L === "zh" ? "" : " ") + numbers.map((n) => `[${n}]`).join("") : "");
+  const research = state.session.researched ? state.research : null;
 
   add(`# ${plan.title || state.session.topic}`, "");
   const by = state.sample?.generator.startsWith("claude") ? tt("focus.md_by_claude") : tt("focus.md_by_tool");
@@ -1604,6 +2106,11 @@ function markdown() {
       if (finding.participants?.length) add(`   ${names(finding.participants)}`);
       add("");
     });
+  }
+  if (report.background?.length) {
+    add(`## ${tt("focus.background")}`, "");
+    for (const item of report.background) add(`- ${item.text}${marks(item.sources)}`);
+    add("");
   }
   if (report.stances?.length) {
     add(`## ${tt("focus.stances")}`, "");
@@ -1673,12 +2180,30 @@ function markdown() {
   if (plan.objective) add(`- **${tt("focus.md_objective")}**${colon}${plan.objective}`);
   if (state.session.audience) add(`- **${tt("focus.md_audience")}**${colon}${state.session.audience}`);
   if (state.session.context) add(`- **${tt("focus.md_context")}**${colon}${state.session.context}`);
+  if (research) {
+    add("", `### ${tt("focus.md_research")}${paren(research.date)}`, "");
+    if (research.summary) add(research.summary, "");
+    for (const fact of research.facts) {
+      const kind = tt(`focus.kind.${fact.kind}`);
+      add(`- ${L === "zh" ? `（${kind}）` : `(${kind}) `}${fact.text}${marks(fact.sources)}`);
+    }
+    if (research.gaps) add("", tt("focus.research_gaps", { gaps: research.gaps }));
+  }
   add("", `### ${tt("focus.participants")}`, "");
   for (const person of plan.participants) {
-    add(`- **${person.name}**${person.summary ? paren(person.summary) : ""} · ${tt(`focus.stance.${person.stance}`)}${person.profile ? colon + person.profile : ""}`);
+    const aware = person.awareness ? ` · ${tt(`focus.aware.${person.awareness}`)}` : "";
+    add(`- **${person.name}**${person.summary ? paren(person.summary) : ""} · ${tt(`focus.stance.${person.stance}`)}${aware}${person.profile ? colon + person.profile : ""}${person.heard ? ` ${tt("focus.heard", { heard: person.heard })}` : ""}`);
   }
   add("", `### ${tt("focus.guide")}`, "");
   plan.guide.forEach((item, index) => add(`${index + 1}. ${item.question}`));
+  if (research?.sources.length) {
+    add("", `## ${tt("focus.md_sources")}`, "");
+    for (const source of research.sources) {
+      const title = (source.title || source.url).replace(/[[\]]/g, "");
+      const meta = [source.site, source.date].filter(Boolean).join(" · ");
+      add(`${source.n}. [${title}](${source.url})${meta ? ` · ${meta}` : ""}`);
+    }
+  }
   add("", `## ${tt("focus.md_appendix")}`, "");
   for (const turn of state.turns) {
     const name = turn.speaker === "moderator" ? tt("focus.moderator") : people[turn.speaker]?.name || turn.speaker;
@@ -1691,11 +2216,13 @@ function markdown() {
 
 function renderAll() {
   const phase = state.phase;
-  const briefStage = phase === "brief" || phase === "recruiting";
+  const researchStage = phase === "research" || (phase === "recruiting" && Boolean(state.session?.researched));
+  const briefStage = ["brief", "researching", "recruiting"].includes(phase) && !researchStage;
   els.brief.hidden = !briefStage;
+  els.research.hidden = !researchStage;
   els.plan.hidden = phase !== "plan";
-  els.session.hidden = briefStage || phase === "plan";
-  els.countSection.hidden = !briefStage;
+  els.session.hidden = briefStage || researchStage || phase === "plan";
+  els.countSection.hidden = !(briefStage || researchStage);
   els.sheet.classList.toggle("is-busy", busy());
   els.sheet.setAttribute("aria-busy", String(busy()));
 
@@ -1705,6 +2232,7 @@ function renderAll() {
 
   renderBrief();
   renderCount();
+  if (researchStage) renderResearch();
   if (phase === "plan") renderPlan();
   if (!els.session.hidden) renderTranscript();
   renderReport();
@@ -1718,12 +2246,26 @@ function renderCount() {
 }
 
 function renderSteps() {
-  const current = { brief: "recruit", recruiting: "recruit", plan: "discuss", discussing: "discuss", stopped: "discuss", reporting: "report", done: "report" }[state.phase];
-  const order = ["recruit", "discuss", "report"];
+  const early = ["brief", "researching", "research"].includes(state.phase);
+  const web = early ? state.web && webAvailable : Boolean(state.session?.researched);
+  const current = {
+    brief: web ? "research" : "recruit",
+    researching: "research",
+    research: "recruit",
+    recruiting: "recruit",
+    plan: "discuss",
+    discussing: "discuss",
+    stopped: "discuss",
+    reporting: "report",
+    done: "report",
+  }[state.phase];
+  const order = web ? ["research", "recruit", "discuss", "report"] : ["recruit", "discuss", "report"];
   const finished = state.phase === "done" && Boolean(state.report);
   const reached = order.indexOf(current);
   for (const step of els.steps) {
     const index = order.indexOf(step.dataset.step);
+    step.hidden = index < 0;
+    $(".step-dot", step).textContent = String(index + 1);
     step.classList.toggle("is-done", finished || index < reached);
     if (index === reached && !finished) step.setAttribute("aria-current", "step");
     else step.removeAttribute("aria-current");
@@ -1737,11 +2279,18 @@ function renderStatus() {
   }
   const phase = state.phase;
   if (phase === "brief") {
+    const web = state.web && webAvailable;
     if (!available) status.info("focus.unavailable");
+    else if (!els.topic.value.trim()) status.info("focus.idle");
+    else if (web && state.research && !researchValid()) status.info("focus.research_stale");
+    else if (web && !researchValid()) status.info("focus.ready_web");
     else if (state.mode === "ab" && (!state.shots.a.length || !state.shots.b.length)) status.info("focus.need_ab");
     else if (state.mode !== "text" && !state.shots.a.length) status.info("focus.need_shots");
-    else if (!els.topic.value.trim()) status.info("focus.idle");
     else status.info("focus.ready");
+  } else if (phase === "research") {
+    if (state.mode === "ab" && (!state.shots.a.length || !state.shots.b.length)) status.info("focus.need_ab");
+    else if (state.mode !== "text" && !state.shots.a.length) status.info("focus.need_shots");
+    else status.done("focus.researched", { sources: state.research.sources.length, facts: state.research.facts.length });
   } else if (phase === "plan") {
     status.done("focus.planned", { count: state.plan.participants.length, questions: state.plan.guide.length });
   } else if (phase === "stopped") {
@@ -1771,10 +2320,22 @@ function renderPanel() {
     h("button", { type: "button", class: quiet ? "btn btn-quiet" : "btn", disabled, onclick }, iconName ? icon(iconName) : null, h("span", { text: label }));
   const row = (...buttons) => h("div", { class: "panel-row" }, buttons.filter(Boolean));
 
+  const canReturn = Boolean(state.plan) && state.planKey === materialKey();
   if (phase === "brief") {
-    const canReturn = state.plan && state.planKey === materialKey();
-    actions.push(primary(t(state.plan ? "focus.rerecruit" : "focus.recruit"), state.plan ? "refresh" : "group", recruit, { disabled: !ready() }));
+    if (needsResearch()) {
+      actions.push(primary(t("focus.research_start"), "globe", research, { disabled: !researchReady() }));
+    } else {
+      actions.push(primary(t(state.plan ? "focus.rerecruit" : "focus.recruit"), state.plan ? "refresh" : "group", recruit, { disabled: !ready() }));
+      if (state.web && webAvailable && researchValid()) actions.push(secondary(t("focus.back_to_research"), "globe", () => setPhase("research")));
+    }
     if (canReturn) actions.push(secondary(t("focus.back_to_plan"), "left", () => setPhase("plan")));
+  } else if (phase === "researching") {
+    actions.push(primary(t("focus.researching"), "globe", null, { busy: true }));
+    actions.push(secondary(t("focus.cancel"), "x", stop));
+  } else if (phase === "research") {
+    actions.push(primary(t(state.plan ? "focus.rerecruit" : "focus.recruit"), state.plan ? "refresh" : "group", recruit, { disabled: !ready() }));
+    if (canReturn && state.session?.researched) actions.push(secondary(t("focus.back_to_plan"), "left", () => setPhase("plan")));
+    actions.push(row(secondary(t("focus.research_again"), "refresh", research, { disabled: !researchReady() }), secondary(t("focus.edit_brief"), "pencil", () => setPhase("brief"))));
   } else if (phase === "recruiting") {
     actions.push(primary(t("focus.recruiting"), "group", null, { busy: true }));
     actions.push(secondary(t("focus.cancel"), "x", stop));
@@ -1841,7 +2402,7 @@ function colon() {
 }
 
 function emptyUsage() {
-  return { calls: 0, prompt_tokens: 0, cache_hit_tokens: 0, completion_tokens: 0, reasoning_tokens: 0 };
+  return { calls: 0, prompt_tokens: 0, cache_hit_tokens: 0, completion_tokens: 0, reasoning_tokens: 0, searches: 0, fetches: 0 };
 }
 
 function turnLabel(turn, plan, total) {
