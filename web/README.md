@@ -7,7 +7,7 @@ A free online image and research tool site in Chinese and English, built on this
 | `/cutout` 智能抠图 | Removes the background and exports a transparent PNG; swap in white, black or any colour before downloading. | BRIA RMBG-1.4 via [IOPaint](https://github.com/Sanster/IOPaint) |
 | `/erase` 涂抹消除 | Paint over people, clutter, watermarks or text; the painted area is filled from its surroundings. Erase repeatedly, undo the last erase, hold to compare. | LaMa via IOPaint |
 | `/heatmap` 注意力热力图 | Predicts where people look on a UI screenshot, scores regions, compares two versions A/B. | HotGaze (this repository) |
-| `/focus-group` AI 焦点小组 | Simulates a focus group on one research question: recruits participants and a discussion guide (reviewed and edited before it runs), streams the discussion turn by turn, then writes a structured report. Optional material: a screen flow, two A/B flows, or one page with its HotGaze heatmap. | DeepSeek API ([`focus_group.py`](focus_group.py)) |
+| `/focus-group` AI 焦点小组 | Simulates a focus group on one research question: optionally researches the live web first (DeepSeek Search and Fetch APIs, with cited sources), recruits participants and a discussion guide (reviewed and edited before it runs), streams the discussion turn by turn, then writes a structured report. Optional material: a screen flow, two A/B flows, or one page with its HotGaze heatmap. | DeepSeek API ([`focus_group.py`](focus_group.py)) |
 
 The home page takes an upload, a drop or a paste and asks which tool to use. The
 UI is a single page (`static/index.html`, `static/css/focal.css`,
@@ -112,8 +112,30 @@ keep glibc from holding on to freed image buffers, and `OPENCV_LOG_LEVEL=ERROR`.
 
 ### AI focus group
 
-A session has three steps, each one request that answers as server-sent events:
+A session has three steps (four with web research), each one request that answers
+as server-sent events:
 
+0. **Web research (optional, the 联网调研 switch).** The model has no live
+   knowledge, so for anything recent (a new phone, a price change, a policy) it
+   researches first. Told today's date, it writes 3–6 search queries; DeepSeek's
+   [Search API](https://api-docs.deepseek.com/zh-cn/guides/search/)
+   (`POST /v1/tools/search`, 8 results each, with page bodies) runs them in
+   parallel; the Fetch API (`POST /v1/tools/fetch`) reads up to 5 links the
+   researcher pastes plus good results that came without a body (at most 6
+   pages). A thinking call condenses the best 14 sources into an overview, up to
+   12 key points tagged confirmed / rumour / user and press feedback, each citing
+   numbered sources, and the gaps. Page text is passed as data, with an
+   instruction to ignore anything in it that reads like an instruction. The
+   researcher reviews it before recruiting: edits the overview and points,
+   adds points, removes unreliable sources (the rest are renumbered). The
+   research then travels with every later request: the planner gives each
+   participant an awareness level (high / medium / low) and a line on what they
+   have heard; the discussion's shared system prompt carries the background, and
+   each participant's turn says how much of it they know, so not everyone
+   recites the spec sheet; the report cites sources as [n], lists background
+   facts, and calls out participants' misconceptions. Search and Fetch use the
+   same `DEEPSEEK_API_KEY`; each costs ¥5 per 1,000 billed requests, so a
+   research step is about ¥0.03–0.06 plus two model calls.
 1. **Recruit.** From the research question (plus optional background, target
    users and material) the model recruits 4–6 participants with concrete,
    differing personas (at least one sceptic) and drafts a 3–5 question guide.
@@ -198,9 +220,10 @@ curl -F image_a=@baseline.png -F image_b=@candidate.png \
 | `POST /api/score` | `score` (schema-v1 score document, as `hotgaze score --json`), `overlay` (JPEG data URL), `elapsed_seconds` |
 | `POST /api/compare` | `compare`, `score_a`, `score_b` (the documents the GitHub Action writes), `overlay_a`, `overlay_b`, `elapsed_seconds` |
 | `GET /api/info` | version, available tools and backends, limits |
-| `POST /api/focus-group/plan` | Events `status`, `attention` (heatmap mode: overlay and HotGaze numbers), `plan`, `usage`, `done`. Fields: `topic`, `lang`, `context`, `audience`, `participants` (3–6), `mode` (`text`, `flow`, `ab`, `heatmap`), `images` (repeatable), `images_b` (A/B), `region` (heatmap mode). |
-| `POST /api/focus-group/discuss` | Events `turn`, `delta`, `turn_end`, `usage`, `done`. Fields: the brief again, `plan` (JSON, as edited), `transcript` (JSON turns to resume after), the screenshots, `overlay` (heatmap mode). |
-| `POST /api/focus-group/report` | Events `status`, `report`, `usage`, `done`. Fields: the brief, `plan`, `transcript`. |
+| `POST /api/focus-group/research` | Events `status` (`queries`, `search`, `fetch`, `digest`), `queries`, `searched` (per query, with the result count), `fetched` (per page), `research`, `usage`, `done`. Fields: `topic`, `lang`, `context`, `audience`, `links` (up to 5, one per line). |
+| `POST /api/focus-group/plan` | Events `status`, `attention` (heatmap mode: overlay and HotGaze numbers), `plan`, `usage`, `done`. Fields: `topic`, `lang`, `context`, `audience`, `participants` (3–6), `mode` (`text`, `flow`, `ab`, `heatmap`), `images` (repeatable), `images_b` (A/B), `region` (heatmap mode), `research` (JSON from the research step, as edited; optional). |
+| `POST /api/focus-group/discuss` | Events `turn`, `delta`, `turn_end`, `usage`, `done`. Fields: the brief again, `plan` (JSON, as edited), `transcript` (JSON turns to resume after), the screenshots, `overlay` (heatmap mode), `research`. |
+| `POST /api/focus-group/report` | Events `status`, `report`, `usage`, `done`. Fields: the brief, `plan`, `transcript`, `research`. |
 
 Image responses carry `X-Focal-Size` (the processed size) and `X-Focal-Elapsed`.
 Heatmap fields: `region` is repeatable (or newline-separated) in the CLI's

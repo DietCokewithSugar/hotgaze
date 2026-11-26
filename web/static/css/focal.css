@@ -2117,7 +2117,8 @@ textarea:disabled {
 /* Step progress in the panel. */
 .steps {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
   gap: 6px;
   margin: 0 0 4px;
   padding: 0;
@@ -3234,4 +3235,418 @@ textarea:disabled {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ── Web research ─────────────────────────────────────────────────────────── */
+
+.web-box {
+  display: grid;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.web-box:has(input[data-web-toggle]:checked) {
+  border-color: rgba(31, 79, 224, 0.32);
+  background: var(--accent-soft);
+}
+
+.web-toggle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 16px;
+  cursor: pointer;
+}
+
+.web-toggle-text {
+  display: grid;
+  gap: 3px;
+  order: -1;
+}
+
+.web-toggle-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.web-toggle-title .icon {
+  color: var(--accent);
+}
+
+.web-toggle small {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-3);
+}
+
+/* A switch: the native checkbox, restyled, keeps its semantics and keyboard use. */
+.web-toggle input {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 24px;
+  margin: 2px 0 0;
+  border-radius: 999px;
+  background: var(--border-strong);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.web-toggle input::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(16, 19, 26, 0.24);
+  transition: transform 0.18s var(--ease-out);
+}
+
+.web-toggle input:checked {
+  background: var(--accent);
+}
+
+.web-toggle input:checked::after {
+  transform: translateX(16px);
+}
+
+.web-toggle input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.web-toggle input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.links-input {
+  background: #fff;
+}
+
+textarea.links-input {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  font-size: 13.5px;
+}
+
+.research-log {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.research-log li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--border);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.research-log li > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.research-log .num {
+  color: var(--ink-3);
+}
+
+.research-log li.is-empty {
+  color: var(--ink-3);
+}
+
+/* Step 1b: the research brief, reviewed and edited before recruiting. */
+.research {
+  display: grid;
+  gap: 24px;
+}
+
+.research-head {
+  display: grid;
+  gap: 6px;
+}
+
+.research-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.research-head h2 .icon {
+  color: var(--accent);
+}
+
+.research-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+}
+
+.research-summary > div > p:first-child {
+  max-width: 70ch;
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.research-gaps {
+  margin-top: 8px;
+  max-width: 70ch;
+  font-size: 14px;
+  color: var(--ink-3);
+}
+
+.facts,
+.sources {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fact,
+.source {
+  display: grid;
+  align-items: start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.fact {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.source {
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+}
+
+.fact:last-child,
+.source:last-child {
+  border-bottom: 0;
+}
+
+.fact.is-editing {
+  grid-template-columns: minmax(0, 1fr);
+  margin: 4px 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.fact-text {
+  max-width: 72ch;
+  font-size: 15.5px;
+}
+
+.fact-text .tag {
+  margin-right: 8px;
+}
+
+.tag-kind-fact {
+  background: var(--accent-soft);
+  color: #1c3a99;
+}
+
+.tag-kind-rumor {
+  background: var(--warning-soft);
+  color: #6b3b00;
+}
+
+.tag-aware-high {
+  background: var(--accent-soft);
+  color: #1c3a99;
+}
+
+.tag-aware-low {
+  background: var(--surface-2);
+  color: var(--ink-3);
+}
+
+.cite {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  margin: 0 1px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 5px;
+  background: var(--accent-soft);
+  color: #1c3a99;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  vertical-align: 2px;
+  cursor: pointer;
+}
+
+.cite:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.cite:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.source-n {
+  padding-top: 1px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-3);
+  text-align: right;
+}
+
+.source-title {
+  font-size: 15px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.source-title a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 3px;
+}
+
+.source-title a:hover {
+  color: var(--accent);
+  text-decoration-color: currentColor;
+}
+
+.source .meta {
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+.source.is-target {
+  animation: source-flash 1.6s var(--ease-out);
+}
+
+@keyframes source-flash {
+  from {
+    background: var(--accent-soft);
+  }
+  to {
+    background: transparent;
+  }
+}
+
+.queries {
+  font-size: 14px;
+  color: var(--ink-3);
+}
+
+.queries summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.queries ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.queries li {
+  padding: 1px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+
+.plan-research {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+}
+
+.plan-research p:first-child {
+  max-width: 70ch;
+  color: var(--ink-2);
+}
+
+.person-heard {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--ink-3);
+}
+
+.background-list {
+  display: grid;
+  gap: 10px;
+  max-width: 70ch;
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.background-list li {
+  font-size: 15px;
+  color: var(--ink-2);
+}
+
+.report .sources .source {
+  grid-template-columns: 28px minmax(0, 1fr);
+}
+
+@media (max-width: 640px) {
+  .web-box {
+    padding: 12px 14px;
+  }
+
+  .source {
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+  }
+
+  .report .sources .source {
+    grid-template-columns: 22px minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .web-toggle input::after {
+    transition: none;
+  }
+
+  .source.is-target {
+    animation: none;
+  }
+}
+
+.spinner-xs {
+  width: 11px;
+  height: 11px;
+  margin: 0;
+  border-width: 1.5px;
 }

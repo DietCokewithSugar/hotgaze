@@ -14,6 +14,7 @@ duration of one request.
     POST /api/compare                   two screenshots -> overlays + compare JSON
     POST /api/cutout                    image -> PNG with a transparent background (RMBG-1.4)
     POST /api/erase                     image + mask -> image with the painted area filled (LaMa)
+    POST /api/focus-group/research      brief (+ links) -> searched, cited background (SSE)
     POST /api/focus-group/plan          brief (+ screenshots) -> participants and guide (SSE)
     POST /api/focus-group/discuss       plan (+ screenshots) -> the discussion, turn by turn (SSE)
     POST /api/focus-group/report        plan + transcript -> structured report (SSE)
@@ -225,6 +226,7 @@ async def info() -> dict[str, Any]:
             "cutout": bool(IOPAINT_URL),
             "erase": bool(IOPAINT_URL),
             "focus_group": FOCUS.configured,
+            "web_research": FOCUS.configured,
         },
         "backends": ["fast", "deep"] if DEEP_AVAILABLE else ["fast"],
         "layers": ["faces"],
@@ -244,6 +246,7 @@ async def info() -> dict[str, Any]:
             "topic_max": focus_group.TOPIC_MAX,
             "context_max": focus_group.CONTEXT_MAX,
             "audience_max": focus_group.AUDIENCE_MAX,
+            "max_links": focus_group.MAX_LINKS,
         },
         "samples": list(SAMPLES) if _SAMPLE_SCRIPT.exists() else [],
     }
@@ -388,10 +391,37 @@ _FOCUS_MODE_HELP = (
     "in `images` and version B in `images_b`, 1–10 each; heatmap: one page in `images`, "
     "which HotGaze analyses first."
 )
+_FOCUS_RESEARCH_HELP = (
+    "The web research from /api/focus-group/research, as reviewed and edited (JSON); "
+    "empty for a session without it."
+)
 _FOCUS_EVENTS = (
     "Answers as server-sent events and ends with `done`, or with `error` carrying a "
     "translatable code like the other endpoints."
 )
+
+
+@app.post("/api/focus-group/research", response_class=StreamingResponse)
+async def focus_research(
+    topic: Annotated[str, Form(description="The research question.")],
+    lang: Annotated[FocusLang, Form(description="Language of the whole session.")] = "zh",
+    context: Annotated[str, Form(description="Background: product, concept, situation.")] = "",
+    audience: Annotated[str, Form(description="Who the participants should be.")] = "",
+    links: Annotated[str, Form(description="Up to 5 reference links to read, one per line.")] = "",
+) -> StreamingResponse:
+    """AI focus group, step 0 (optional): desk research on the live web.
+
+    DeepSeek writes search queries, the Search API runs them, the Fetch API reads the
+    researcher's links and results that came without a body, and the model condenses
+    it all into a background brief whose facts cite numbered sources. Events: `status`,
+    `queries`, `searched`, `fetched`, `research`, `usage`.
+    """
+    settings = _focus_settings()
+    brief = _focus_brief(lang, topic, context, audience, focus_group.MAX_PARTICIPANTS, "text")
+    urls = _focus_checked(lambda: focus_group.parse_links(links))
+    client = _focus_client(settings)
+    web = _focus_web(client)
+    return _focus_stream(focus_group.research_session(client, web, brief, urls), client)
 
 
 @app.post("/api/focus-group/plan", response_class=StreamingResponse)
@@ -407,6 +437,7 @@ async def focus_plan(
     images: Annotated[list[UploadFile] | None, File(description="Screenshots, in order.")] = None,
     images_b: Annotated[list[UploadFile] | None, File(description="Version B (mode ab).")] = None,
     region: Annotated[list[str] | None, Form(description=_REGION_HELP)] = None,
+    research: Annotated[str, Form(description=_FOCUS_RESEARCH_HELP)] = "",
 ) -> StreamingResponse:
     """AI focus group, step 1: recruit participants and draft the discussion guide.
 
@@ -414,7 +445,7 @@ async def focus_plan(
     `plan` (participants, guide, screen descriptions, attention notes); `usage`.
     """
     settings = _focus_settings()
-    brief = _focus_brief(lang, topic, context, audience, participants, mode)
+    brief = _focus_brief(lang, topic, context, audience, participants, mode, research)
     regions = _parse_regions(region) if mode == "heatmap" else []
     shots, screen = await run_in_threadpool(_focus_shots, mode, images, images_b, FOCUS_PLAN_EDGE)
     material = focus_group.Material(mode, shots)
@@ -448,6 +479,7 @@ async def focus_discuss(
     overlay: Annotated[
         UploadFile | None, File(description="The heatmap overlay from step 1 (mode heatmap).")
     ] = None,
+    research: Annotated[str, Form(description=_FOCUS_RESEARCH_HELP)] = "",
 ) -> StreamingResponse:
     """AI focus group, step 2: run the discussion, or resume it after `transcript`.
 
@@ -455,7 +487,9 @@ async def focus_discuss(
     (the settled turn, to keep), `usage`.
     """
     settings = _focus_settings()
-    brief = _focus_brief(lang, topic, context, audience, focus_group.MAX_PARTICIPANTS, mode)
+    brief = _focus_brief(
+        lang, topic, context, audience, focus_group.MAX_PARTICIPANTS, mode, research
+    )
     shots, _ = await run_in_threadpool(_focus_shots, mode, images, images_b, FOCUS_TALK_EDGE)
     material = focus_group.Material(mode, shots)
     if mode == "heatmap" and overlay is not None:
@@ -477,14 +511,19 @@ async def focus_report(
     context: Annotated[str, Form()] = "",
     audience: Annotated[str, Form()] = "",
     mode: Annotated[FocusMode, Form(description=_FOCUS_MODE_HELP)] = "text",
+    research: Annotated[str, Form(description=_FOCUS_RESEARCH_HELP)] = "",
 ) -> StreamingResponse:
     """AI focus group, step 3: the structured report, from the transcript alone.
+
+    With web research the report cites its sources by number.
 
     A stopped discussion can be reported on as far as it went. Events: `status`,
     `report`, `usage`.
     """
     settings = _focus_settings()
-    brief = _focus_brief(lang, topic, context, audience, focus_group.MAX_PARTICIPANTS, mode)
+    brief = _focus_brief(
+        lang, topic, context, audience, focus_group.MAX_PARTICIPANTS, mode, research
+    )
     raw_plan = _focus_parse(plan, "focus_invalid_plan")
     refs = focus_group.plan_refs(mode, raw_plan)
     material = focus_group.Material(mode, [focus_group.Shot(ref, "") for ref in refs])
@@ -793,8 +832,19 @@ def _focus_client(settings: focus_group.Settings) -> focus_group.LLM:
     return focus_group.DeepSeek(settings)
 
 
+def _focus_web(client: focus_group.LLM) -> focus_group.Web:
+    """Search and Fetch go through the same DeepSeek client (and key) as the chat calls."""
+    return client  # type: ignore[return-value]
+
+
 def _focus_brief(
-    lang: str, topic: str, context: str, audience: str, participants: int, mode: str
+    lang: str,
+    topic: str,
+    context: str,
+    audience: str,
+    participants: int,
+    mode: str,
+    research: str = "",
 ) -> focus_group.Brief:
     topic, context, audience = topic.strip(), context.strip(), audience.strip()
     if not topic:
@@ -812,7 +862,9 @@ def _focus_brief(
                 field=name,
                 limit=limit,
             )
-    return focus_group.Brief(lang, topic, context, audience, participants, mode)  # type: ignore[arg-type]
+    raw_research = _focus_parse(research, "focus_invalid_research")
+    checked = _focus_checked(lambda: focus_group.validate_research(raw_research))
+    return focus_group.Brief(lang, topic, context, audience, participants, mode, checked)  # type: ignore[arg-type]
 
 
 def _focus_shots(
